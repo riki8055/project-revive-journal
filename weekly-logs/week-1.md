@@ -14,9 +14,13 @@
 
 - Hoisting with variables
 
+- Tagged Templates _(returning a string built using a template literal)_
+
 ## What confused me
 
-(be specific)
+- Literals (basic definition 😒)
+- Tagged Templates
+  - Study this after Day 5 -> <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#string_literals">Tagged Templates</a> _(before touching mini project)_
 
 ## What I avoided
 

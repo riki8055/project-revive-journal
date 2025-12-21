@@ -1,6 +1,6 @@
 Month 1 > Week 1 > Day 1
 
-# Declarations
+## Declarations
 
 JavaScript has three kinds of variable declarations.
 
@@ -132,5 +132,17 @@ Refer to the exhibit below for `var` declaration:
 - Refer to the exhibit below for hoisting `let` & `const` declaration:
 
    <img src="codesnaps/code7.png" width=400 />
+
+## Tagged Templates
+
+- A more advanced form of template literals are tagged templates.
+
+- Tags allow you to parse template literals with a function. The first argument of a tag function contains an array of string values. The remaining arguments are related to the expressions.
+
+- The tag function can then perform whatever operations on these arguments you wish, and return the manipulated string. _(Alternatively, it can return something completely different, as described in one of the following examples in the exhibit.)_
+
+   <img src="codesnaps/code8.png" width=600 />
+
+> 💡 A tagged template is just a function call — written in a special syntax.
 
 ---

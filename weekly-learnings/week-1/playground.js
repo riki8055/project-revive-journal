@@ -41,10 +41,41 @@ if (true) {
 //   _x = "local value";
 // })();
 
-(function () {
-  console.log($kag); // ReferenceError: Cannot access '$kag' before initialization
-  const $kag = "local value";
+// (function () {
+//   console.log($kag); // ReferenceError: Cannot access '$kag' before initialization
+//   const $kag = "local value";
 
-  console.log(test); // ReferenceError: Cannot access 'test' before initialization
-  let test = "test value";
-})();
+//   console.log(test); // ReferenceError: Cannot access 'test' before initialization
+//   let test = "test value";
+// })();
+
+// console.log(parseInt("01101", 10));
+
+// Literals
+
+// Array Literals
+
+// const myList = ["home", , "school"];
+// console.log(myList); // [ 'home', <1 empty item>, 'school' ]
+
+// const myList = ["home", "school", +"hospital"];
+
+// console.log(myList);
+
+// Tagged Templates
+
+// const _name = "Mike";
+// const _age = 25;
+
+// function taggedTemplates(strings, ...expressions) {
+//   const ageStr = expressions[1] < 100 ? "Youngster" : "Centenarian";
+
+//   console.log(strings); // [ 'Hello! My name is ', '. I am ', ' years old.' ]
+//   console.log(expressions); // [ 'Mike', 25 ]
+
+//   return `${strings[0]}${expressions[0]}${strings[1]}${expressions[1]}${strings[2]} So, I am a ${ageStr}.`;
+// }
+
+// const output = taggedTemplates`Hello! My name is ${_name}. I am ${_age} years old.`;
+
+// console.log(output); // Hello! My name is Mike. I am 25 years old. So, I am a Youngster.

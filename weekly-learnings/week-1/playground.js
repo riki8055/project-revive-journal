@@ -79,3 +79,47 @@ if (true) {
 // const output = taggedTemplates`Hello! My name is ${_name}. I am ${_age} years old.`;
 
 // console.log(output); // Hello! My name is Mike. I am 25 years old. So, I am a Youngster.
+
+// // Defining Functions
+
+// // Constructor
+// const multiply = new Function("x", "y", "return x * y");
+
+// // Declaration
+// function multiply(x, y) {
+//   return x * y;
+// } // No need for semicolon here
+
+// // Expression; the function is anonymous but assigned to a variable
+// const multiply = function (x, y) {
+//   return x * y;
+// };
+// // Expression; the function has its own name
+// const multiply = function funcName(x, y) {
+//   return x * y;
+// };
+
+// // Arrow function
+// const multiply = (x, y) => x * y;
+
+// // Method
+// const obj = {
+//   multiply(x, y) {
+//     return x * y;
+//   },
+// };
+
+// Lexical this (arrow fn)
+
+const obj = {
+  name: "Ritik",
+  normal() {
+    console.log(this.name);
+  },
+  arrow: () => {
+    console.log(this.name);
+  }
+};
+
+obj.normal(); // Ritik
+obj.arrow();  // undefined

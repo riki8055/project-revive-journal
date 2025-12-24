@@ -148,3 +148,76 @@ const obj = {
 
 obj.normal(); // Ritik
 obj.arrow(); // undefined
+
+// Creating Array (different ways)
+// const arr1 = new Array(element0, element1, /* …, */ elementN);
+// const arr2 = Array(element0, element1, /* …, */ elementN);
+// const arr3 = [element0, element1, /* …, */ elementN];
+
+// Array initialization
+
+// const arr = [42]; // This creates an array with only one element: the number 42.
+
+// const arr2 = Array(42); // This creates an array with no elements and arr2.length set to 42
+// // OR
+// const _arr2 = []; // This creates an array with no elements
+// _arr2.length = 42; // _arr2.length set to 42
+
+// // Property accessors
+
+// const arr = ["one", "two", "three"];
+// arr[2]; // three
+// arr["length"]; // 3
+
+// // Populating array
+// const arr = [];
+// arr[3.4] = "Oranges";
+// console.log(arr.length); // 0
+// console.log(Object.hasOwn(arr, 3.4)); // true
+
+// // Iterating over arrays
+
+// // Method 1
+// const colors = ["red", "green", "blue"];
+// for (let i = 0; i < colors.length; i++) {
+//   console.log(colors[i]);
+// }
+
+// // Method 2
+// const divs = document.getElementsByTagName("div");
+// for (let i = 0, div; (div = divs[i]); i++) {
+//   /* Process div in some way */
+// }
+
+// // Method 3
+// const colors = ["red", "green", "blue"];
+// colors.forEach((color) => console.log(color));
+// // red
+// // green
+// // blue
+
+// Method 4
+const sparseArray = ["first", "second", , "fourth"];
+
+sparseArray.forEach((element) => {
+  console.log(element);
+});
+// Logs:
+// first
+// second
+// fourth
+
+if (sparseArray[2] === undefined) {
+  console.log("sparseArray[2] is undefined"); // true
+}
+
+const nonsparseArray = ["first", "second", undefined, "fourth"];
+
+nonsparseArray.forEach((element) => {
+  console.log(element);
+});
+// Logs:
+// first
+// second
+// undefined
+// fourth

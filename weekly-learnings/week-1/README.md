@@ -265,3 +265,57 @@ Why?
 - A parent scope that defines some variables or functions. It should have a clear lifetime, which means it should finish execution at some point. **Any scope that's not the global scope satisfies this requirement; this includes blocks, functions, modules, and more**.
 
 - An inner scope defined within the parent scope, which refers to some variables or functions defined in the parent scope.
+
+---
+
+Month 1 > Week 1 > Day 3
+
+## Indexed Collections _(Array)_
+
+- An array is an ordered list of values that you refer to with a name and an index.
+
+  - For example, consider an array called `emp`, which contains employees' names indexed by their numerical employee number. So `emp[0]` would be employee number zero, `emp[1]` employee number one, and so on.
+
+- JavaScript does not have an explicit array data type. However, you can use the predefined `Array` object and its methods to work with arrays in your applications. The `Array` object has methods for manipulating arrays in various ways, such as joining, reversing, and sorting them. It has a property for determining the array length and other properties for use with regular expressions.
+
+- Refer to the exhibit below that demonstrate some statements that create equivalent arrays:
+
+<!-- Paste screenshot of `Creating Array (different ways)` code snippet from playground.js -->
+
+- If you wish to initialize an array with a single element, and the element happens to be a Number, you must use the bracket syntax. When a single Number value is passed to the `Array()` constructor or function, it is interpreted as an `arrayLength`, not as a single element.
+
+- Refer to the exhibit below showing array initialization:
+
+<!-- Paste screenshot of `Array Initialization` code snippet from playground.js -->
+
+> 💡 You can also use the `Array.of` static method to create arrays with single element.
+
+### Referring to Array Elements
+
+You can use **property accessors** to access other properties of the array, like with an object. Refer
+
+<!-- Paste screenshot of `Property accessors` code snippet from playground.js -->
+
+### Populating an Array
+
+If you supply a non-integer value to the array operator _(like in the code in exhibit below)_, a property will be created in the object representing the array, instead of an array element.
+
+<!-- Paste screenshot of `Populating array` code snippet from playground.js -->
+
+### Iterating over arrays
+
+- A common operation is to iterate over the values of an array, processing each one in some way, as follows:
+<!-- Paste screenshot of `Iterating over arrays > method 1` code snippet from playground.js -->
+
+- If you know that none of the elements in your array evaluate to `false` in a boolean context—if your array consists only of **DOM** nodes, for example—you can use a more efficient idiom:
+<!-- Paste screenshot of `Iterating over arrays > method 2` code snippet from playground.js -->
+
+- This avoids the overhead of checking the length of the array, and ensures that the `div` variable is reassigned to the current item each time around the loop for added convenience.
+
+- The `forEach()` method provides another way of iterating over an array:
+<!-- Paste screenshot of `Iterating over arrays > method 3` code snippet from playground.js -->
+
+- The function passed to `forEach` is executed once for every item in the array, with the array item passed as the argument to the function. **Unassigned values** are not iterated in a `forEach` loop.
+
+- Note that the elements of an array that are omitted when the array is defined are not listed when iterating by `forEach`, but are listed when `undefined` has been manually assigned to the element (refer to the following exhibit):
+<!-- Paste screenshot of `Iterating over arrays > method 4` code snippet from playground.js -->

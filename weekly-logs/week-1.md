@@ -20,6 +20,10 @@
 
 - `this` works lexically in arrow functions
 
+- Indexed collections (array)
+
+- Referring to array elements, populating an array, Iterating methods
+
 ## What confused me
 
 - Literals (basic definition 😒)

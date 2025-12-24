@@ -218,3 +218,50 @@ fn(); // no object on the left
 ```
 
 > 💡 `this` is not lexical. It is dynamic. It is determined **at call time**, not at write time.
+
+### Defining functions
+
+- There are special syntaxes for defining **arrow functions** and **methods**, which provide more precise semantics for their usage.
+
+- Classes are conceptually not functions _(because they throw an error when called without `new`)_, but they also inherit from `Function.prototype` and have `typeof` `MyClass === "function"`.
+
+<!-- Paste screenshot of `Defining Functions` code snippet from playground.js -->
+
+All syntaxes do approximately the same thing, but there are some subtle behavior differences.
+
+- The `Function()` constructor, `function` expression, and `function` declaration syntaxes create full-fledged function objects, which can be constructed with `new`. However, arrow functions and methods cannot be constructed. Async functions are not constructible regardless of syntax.
+
+- The `function` declaration creates functions that are **hoisted**. **Other syntaxes** do not hoist the function and the function value is only visible **after the definition**.
+
+- The arrow function and `Function()` constructor always create anonymous functions, which means they can't easily call themselves recursively. One way to call an arrow function recursively is by assigning it to a variable.
+
+- The arrow function syntax does not have access to `arguments` or `this`.
+
+- The `Function()` constructor cannot access any local variables — it only has access to the global scope.
+
+- The `Function()` constructor causes runtime compilation and is often slower than other syntaxes.
+
+> 💡 Arrow functions capture this from the surrounding scope at the time they are created. This is called lexical `this`.
+
+- Refer to the exhibit below for lexical `this` (arrow fn):
+
+<!-- Paste screenshot of Lexical this (arrow fn) code snippet from playground.js -->
+
+Why?
+
+- `normal()` → `this = obj`
+- `arrow()` → `this` comes from outer scope, not obj
+
+### Function Scope & Closures
+
+- Functions form a scope for variables—this means variables defined inside a function cannot be accessed from anywhere outside the function.
+
+- The function scope inherits from all the upper scopes. For example, a function defined in the global scope can access all variables defined in the global scope.
+
+- A function defined inside another function can also access all variables defined in its parent function, and any other variables to which the parent function has access. On the other hand, the parent function (and any other parent scope) does not have access to the variables and functions defined inside the inner function. This provides a sort of encapsulation for the variables in the inner function.
+
+### Closures
+
+- A parent scope that defines some variables or functions. It should have a clear lifetime, which means it should finish execution at some point. **Any scope that's not the global scope satisfies this requirement; this includes blocks, functions, modules, and more**.
+
+- An inner scope defined within the parent scope, which refers to some variables or functions defined in the parent scope.

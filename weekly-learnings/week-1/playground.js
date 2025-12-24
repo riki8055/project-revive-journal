@@ -79,3 +79,29 @@ if (true) {
 // const output = taggedTemplates`Hello! My name is ${_name}. I am ${_age} years old.`;
 
 // console.log(output); // Hello! My name is Mike. I am 25 years old. So, I am a Youngster.
+
+// function add(a, b) {
+//   /* An empty function */
+// }
+
+// console.log(add(1, 2));
+
+// const person = {
+//   name: "Alex",
+//   sayName() {
+//     console.log(this.name);
+//   },
+// };
+
+// const fn = person.sayName;
+// fn(); // undefined
+
+function show() {
+  console.log(this.value);
+}
+
+const a = { value: 10, show };
+const b = { value: 20, show };
+
+a.show();
+b.show();

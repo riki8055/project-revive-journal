@@ -146,3 +146,75 @@ Refer to the exhibit below for `var` declaration:
 > 💡 A tagged template is just a function call — written in a special syntax.
 
 ---
+
+Month 1 > Week 1 > Day 2
+
+## Functions
+
+- A function is a "subprogram" that can be called by code external (or internal, in the case of recursion) to the function.
+
+- Like the program itself, a function is composed of a sequence of statements called the function body.
+
+- Values can be passed to a function as parameters, and the function will return a value.
+
+- Function values are typically instances of `Function`. Callable values cause `typeof` to return "function" instead of "object".
+
+  or
+
+- Functions in JavaScript are objects created from the Function constructor, but JavaScript treats **callable objects specially** and reports their type as "function" instead of "object".
+
+   <img src="codesnaps/code9.png" width=400 />
+
+- So:
+  - `add` is a **function**
+  - internally, it's an **object**
+  - Its constructor is `Function`
+
+### Proof that functions ARE objects
+
+<img src="codesnaps/code10.png" width=500 />
+
+You can:
+
+- attach properties
+- pass functions as values
+- return them
+- store them in arrays
+
+> 💡 Function = Object + ()
+
+### Return Value
+
+- By default, if a function's execution doesn't end at a `return` statement, or if the `return` keyword doesn't have an expression after it, then the return value is `undefined`.
+
+- The `return` statement allows you to return an arbitrary value from the function.
+
+- One function call can only return one value, but you can simulate the effect of returning multiple values by returning an object or array and destructuring the result.
+
+   <img src="codesnaps/code11.png" width=300 />
+
+### The `this` Keyword
+
+The `this` keyword refers to the object that the function is accessed on — it does not refer to the currently executing function, so you must refer to the function value by name, even within the function body.
+
+> 💡 `this` means the object on which the function was called
+
+<img src="codesnaps/code12.png" width=400 />
+
+### Now the scary part (same function, different this)
+
+<img src="codesnaps/code13.png" width=400 />
+
+What is `this` now?
+
+- ❌ not person
+- ❌ not the function
+- ✅ `undefined` (in strict mode)
+
+Because:
+
+```
+fn(); // no object on the left
+```
+
+> 💡 `this` is not lexical. It is dynamic. It is determined **at call time**, not at write time.

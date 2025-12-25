@@ -266,6 +266,78 @@ Why?
 
 - An inner scope defined within the parent scope, which refers to some variables or functions defined in the parent scope.
 
+- In simpler terms, a closure is a function together with the variables from its lexical scope that it remembers, even after that scope has finished executing.
+
+- Refer to the exhibit below demonstrating **the simplest closure**:
+
+   <img src="codesnaps/code16.png" width=300 />
+
+- What’s happening _(reality check)_
+
+  - `outer()` finishes execution
+  - Normally, `count` should be destroyed
+  - BUT `inner` still references it
+  - So JS keeps `count` alive
+
+  👉 That “keeping alive” is closure
+
+### Why Closures are Powerful (and Dangerous)
+
+**Powerful**
+
+- Private state
+- Factory functions
+- Memoization
+- Callbacks
+- Event handlers
+- Async code
+
+**Dangerous _(if misunderstood)_**
+
+- Unexpected shared state
+- Memory leaks
+- Bugs in loops (var problem)
+
+### The Classic Loop Bug (Closure Trap)
+
+<img src="codesnaps/code17.png" width=300 />
+
+Why?
+
+- One shared `i`
+- All closures reference the same variable
+
+Fix:
+
+<img src="codesnaps/code18.png" width=300 />
+
+Each `let` creates a new binding.
+
+> 💡 Functions don’t capture values. They capture variables.
+
+## Closures + Memory Leaks
+
+A memory leak happens when memory that is no longer needed is still reachable, so the garbage collector cannot free it.
+
+> 💡 JavaScript **does not leak memory accidentally**. It leaks memory because **you keep references alive**.
+
+If a closure references a variable, that variable stays in memory as long as the closure is reachable.
+
+<img src="codesnaps/code19.png" width=300 />
+
+**What happened in momory?**
+
+- `bigData` is created _(huge)_
+- `handler` does not use `bigData`
+- BUT `handler` **closes over the entire scope**
+- `handler` is still reachable → `bigData` stays in memory
+
+💥 Leak created
+
+> 💡 Unreleased references cause memory leaks
+
+> 💡 Closures don’t leak memory — they extend object lifetimes, and careless lifetimes cause leaks.
+
 ---
 
 Month 1 > Week 1 > Day 3

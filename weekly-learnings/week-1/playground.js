@@ -96,15 +96,16 @@ if (true) {
 // const fn = person.sayName;
 // fn(); // undefined
 
-function show() {
-  console.log(this.value);
-}
+// function show() {
+//   console.log(this.value);
+// }
 
-const a = { value: 10, show };
-const b = { value: 20, show };
+// const a = { value: 10, show };
+// const b = { value: 20, show };
 
-a.show();
-b.show();
+// a.show();
+// b.show();
+
 // // Defining Functions
 
 // // Constructor
@@ -136,18 +137,67 @@ b.show();
 
 // Lexical this (arrow fn)
 
-const obj = {
-  name: "Ritik",
-  normal() {
-    console.log(this.name);
-  },
-  arrow: () => {
-    console.log(this.name);
-  },
-};
+// const obj = {
+//   name: "Ritik",
+//   normal() {
+//     console.log(this.name);
+//   },
+//   arrow: () => {
+//     console.log(this.name);
+//   },
+// };
 
-obj.normal(); // Ritik
-obj.arrow(); // undefined
+// obj.normal(); // Ritik
+// obj.arrow(); // undefined
+
+// // The simplest closure
+// function outer() {
+//   let count = 0;
+
+//   function inner() {
+//     count++;
+//     console.log(count);
+//   }
+
+//   return inner;
+// }
+
+// const counter = outer();
+// counter(); // 1
+// counter(); // 2
+
+// The classic loop bug (closure trap)
+
+// for (var i = 0; i < 3; i++) {
+//   setTimeout(() => console.log(i), 100);
+// }
+
+// // Output
+// // 3
+// // 3
+// // 3
+
+// // Fix:
+
+// for (let i = 0; i < 3; i++) {
+//   setTimeout(() => console.log(i), 100);
+// }
+
+// // Output
+// // 0
+// // 1
+// // 2
+
+// Memory leak via closures
+function createHandler() {
+  const bigData = new Array(1_000_000).fill("💣");
+
+  return function handler() {
+    console.log("clicked");
+  };
+}
+
+const handler = createHandler();
 
 // Creating Array (different ways)
 // const arr1 = new Array(element0, element1, /* …, */ elementN);
@@ -196,28 +246,28 @@ obj.arrow(); // undefined
 // // green
 // // blue
 
-// Method 4
-const sparseArray = ["first", "second", , "fourth"];
+// // Method 4
+// const sparseArray = ["first", "second", , "fourth"];
 
-sparseArray.forEach((element) => {
-  console.log(element);
-});
-// Logs:
-// first
-// second
-// fourth
+// sparseArray.forEach((element) => {
+//   console.log(element);
+// });
+// // Logs:
+// // first
+// // second
+// // fourth
 
-if (sparseArray[2] === undefined) {
-  console.log("sparseArray[2] is undefined"); // true
-}
+// if (sparseArray[2] === undefined) {
+//   console.log("sparseArray[2] is undefined"); // true
+// }
 
-const nonsparseArray = ["first", "second", undefined, "fourth"];
+// const nonsparseArray = ["first", "second", undefined, "fourth"];
 
-nonsparseArray.forEach((element) => {
-  console.log(element);
-});
-// Logs:
-// first
-// second
-// undefined
-// fourth
+// nonsparseArray.forEach((element) => {
+//   console.log(element);
+// });
+// // Logs:
+// // first
+// // second
+// // undefined
+// // fourth

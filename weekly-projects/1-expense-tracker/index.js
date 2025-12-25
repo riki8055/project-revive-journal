@@ -12,8 +12,30 @@ if (!command) {
 }
 
 const commands = {
-  add: () => {
-    console.log("Add expense command");
+  add: (args) => {
+    const title = args[0];
+    const amount = args[1];
+
+    if (!title) {
+      console.error("❌ Title is required!");
+      return;
+    }
+
+    if (!amount) {
+      console.error("❌ Amount is required!");
+      return;
+    }
+
+    const parsedAmount = Number(amount);
+    if (Number.isNaN(parsedAmount)) {
+      console.error("❌ Amount must be a number!");
+      return;
+    }
+
+    console.log("Parsed ADD command:", {
+      title,
+      amount: parsedAmount,
+    });
   },
   list: () => {
     console.log("List expense command");

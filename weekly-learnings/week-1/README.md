@@ -225,7 +225,7 @@ fn(); // no object on the left
 
 - Classes are conceptually not functions _(because they throw an error when called without `new`)_, but they also inherit from `Function.prototype` and have `typeof` `MyClass === "function"`.
 
-<!-- Paste screenshot of `Defining Functions` code snippet from playground.js -->
+   <img src="codesnaps/code14.png" width=400 />
 
 All syntaxes do approximately the same thing, but there are some subtle behavior differences.
 
@@ -245,7 +245,7 @@ All syntaxes do approximately the same thing, but there are some subtle behavior
 
 - Refer to the exhibit below for lexical `this` (arrow fn):
 
-<!-- Paste screenshot of Lexical this (arrow fn) code snippet from playground.js -->
+   <img src="codesnaps/code15.png" width=300 />
 
 Why?
 

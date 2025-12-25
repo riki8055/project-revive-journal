@@ -45,8 +45,14 @@ const commands = {
 
     console.log("Parsed list command");
   },
-  delete: () => {
-    console.log("Delete expense command");
+  delete: (args) => {
+    const id = args[0];
+
+    if (!id) {
+      console.log("❌ Expense ID is required");
+      return;
+    }
+    console.log("Parsed delete command: ", id);
   },
 };
 

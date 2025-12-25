@@ -18,6 +18,18 @@
 
 - How to define functions
 
+- Closures _(real definition)_
+
+- Real world examples of closures & memory leaks via closure
+
+- How to avoid memory leaks via closures _(best practices)_
+
+- Always ask 3 questions:
+
+  - What variables does this function close over?
+  - How long will this function live?
+  - Is anything inside unnecessarily large?
+
 - `this` works lexically in arrow functions
 
 - Indexed collections (array)

@@ -37,8 +37,13 @@ const commands = {
       amount: parsedAmount,
     });
   },
-  list: () => {
-    console.log("List expense command");
+  list: (args) => {
+    if (!(args.length === 0)) {
+      console.log("❌ List command does not take any arguments");
+      return;
+    }
+
+    console.log("Parsed list command");
   },
   delete: () => {
     console.log("Delete expense command");

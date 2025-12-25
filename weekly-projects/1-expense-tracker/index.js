@@ -11,26 +11,21 @@ if (!command) {
   process.exit(1);
 }
 
+// Validation Helper Fn
+function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
 const commands = {
   add: (args) => {
-    const title = args[0];
-    const amount = args[1];
-
-    if (!title) {
-      console.error("❌ Title is required!");
-      return;
-    }
-
-    if (!amount) {
-      console.error("❌ Amount is required!");
-      return;
-    }
+    const [title, amount] = args;
+    assert(title, "❌ Title is required!");
+    assert(amount, "❌ Amount is required!");
 
     const parsedAmount = Number(amount);
-    if (Number.isNaN(parsedAmount)) {
-      console.error("❌ Amount must be a number!");
-      return;
-    }
+    assert(!Number.isNaN(parsedAmount), "❌ Amount must be a number!");
 
     console.log("Parsed ADD command:", {
       title,
@@ -38,20 +33,14 @@ const commands = {
     });
   },
   list: (args) => {
-    if (!(args.length === 0)) {
-      console.log("❌ List command does not take any arguments");
-      return;
-    }
+    assert(args.length === 0, "❌ List command does not take any arguments");
 
     console.log("Parsed list command");
   },
   delete: (args) => {
-    const id = args[0];
+    const [id] = args;
+    assert(id, "❌ Expense ID is required");
 
-    if (!id) {
-      console.log("❌ Expense ID is required");
-      return;
-    }
     console.log("Parsed delete command: ", id);
   },
 };
@@ -62,7 +51,9 @@ if (!action) {
   process.exit(1);
 }
 
-action(commandArgs);
-
-// console.log("Command: ", command);
-// console.log("Args: ", commandArgs);
+try {
+  action(commandArgs);
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}

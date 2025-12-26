@@ -1,3 +1,5 @@
+const { createExpense } = require("./utils/expense");
+
 const args = process.argv.slice(2);
 const command = args[0];
 const commandArgs = args.slice(1);
@@ -27,10 +29,12 @@ const commands = {
     const parsedAmount = Number(amount);
     assert(!Number.isNaN(parsedAmount), "❌ Amount must be a number!");
 
-    console.log("Parsed ADD command:", {
+    const expense = createExpense({
       title,
       amount: parsedAmount,
     });
+
+    console.log("Created expense: ", expense);
   },
   list: (args) => {
     assert(args.length === 0, "❌ List command does not take any arguments");

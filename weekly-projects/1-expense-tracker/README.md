@@ -397,3 +397,139 @@ If every failure is **clear and intentional**, you did it right.
 - Clean CLI UX
 
 This is **real backend discipline**.
+
+## Step 3: Expense Data Model (Core Object)
+
+**By the end of this step, you will have:**
+
+- **A single source of truth** for what an expense is
+- Validation at creation time
+- No accidental malformed data
+- Zero classes _(intentionally)_
+
+### Decide the shape
+
+An expense will look like this:
+
+```js
+{
+  id: string,
+  title: string,
+  amount: number,
+  createdAt: number
+}
+```
+
+**Why each field exists:**
+
+- `id` → unique identifier (for delete)
+- `title` → what the expense is
+- `amount` → numeric (not string)
+- `createdAt` → timestamp (sortable, serializable)
+
+### Create a factory function _(not a class)_
+
+> commit hash **2c435bf**
+
+Create a folder named `utils` and a new file inside it named `expense.js`
+
+```js
+// expense.js
+
+function createExpense({ title, amount }) {
+  if (!title) {
+    throw new Error("Expense title is required");
+  }
+
+  if (typeof amount !== "number" || Number.isNaN(amount)) {
+    throw new Error("Expense amount must be a valid number");
+  }
+
+  return {
+    id: crypto.randomUUID(),
+    title,
+    amount,
+    createdAt: Date.now(),
+  };
+}
+
+module.exports = { createExpense };
+```
+
+**Important notes _(don’t skip)_**
+
+- This is a pure function
+- No side effects
+- Validation happens once
+- Object literal = data model
+- Factory > class _(for now)_
+
+### Wire it temporarily into `index.js` _(test only)_
+
+```js
+const { createExpense } = require("./expense");
+```
+
+### Inside the `add` command _(replace console.log)_:
+
+```js
+const expense = createExpense({
+  title,
+  amount: parsedAmount,
+});
+
+console.log("Created expense:", expense);
+```
+
+Now run:
+
+```bash
+> node index.js add "Tea" 20
+```
+
+Expected output:
+
+```bash
+Created expense: {
+  id: 'b7a9...',
+  title: 'Tea',
+  amount: 20,
+  createdAt: 169...
+}
+```
+
+### What you just did _(important reflection)_
+
+**You used:**
+
+- Objects as data models
+- Factory functions
+- Error handling _(throw)_
+- Validation at boundaries
+- No `this`
+- No mutation
+- Predictable structure
+
+**Because later:**
+
+- Storage trusts this shape
+- Listing relies on this shape
+- Deletion relies on `id`
+- Persistence relies on serializability
+
+This is **how real systems prevent bugs**.
+
+> If the model is clean → everything else is easy.
+
+### Sanity checks
+
+```bash
+> node index.js add
+> node index.js add Tea abc
+> node index.js add "" 20
+> node index.js add Tea 20
+```
+
+Only the last one should succeed.
+
+> 💡 A data model is a contract, not a container.

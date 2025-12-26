@@ -52,7 +52,7 @@ if (!action) {
 }
 
 try {
-  action(commandArgs);
+  action(commandArgs); // Command dispatch via object lookup
 } catch (error) {
   console.error(error.message);
   process.exit(1);

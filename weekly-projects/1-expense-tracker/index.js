@@ -1,3 +1,4 @@
+const { createExpenseStore } = require("./utils/store");
 const { createExpense } = require("./utils/expense");
 
 const args = process.argv.slice(2);
@@ -19,6 +20,8 @@ function assert(condition, message) {
     throw new Error(message);
   }
 }
+
+const store = createExpenseStore();
 
 const commands = {
   add: (args) => {

@@ -43,13 +43,24 @@ const commands = {
   list: (args) => {
     assert(args.length === 0, "❌ List command does not take any arguments");
 
-    console.log("Parsed list command");
+    const expenses = store.getAll();
+    if (expenses.length === 0) {
+      console.log("No expenses found.");
+      return;
+    }
+
+    expenses.forEach((e) => {
+      console.log(`- ${e.title}: ₹${e.amount}`);
+    });
   },
   delete: (args) => {
     const [id] = args;
     assert(id, "❌ Expense ID is required");
 
-    console.log("Parsed delete command: ", id);
+    const removed = store.removeById(id);
+    assert(removed, `❌ No expense found with id ${id}`);
+
+    console.log("Expense deleted: ", id);
   },
 };
 

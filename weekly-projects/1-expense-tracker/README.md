@@ -533,3 +533,225 @@ This is **how real systems prevent bugs**.
 Only the last one should succeed.
 
 > 💡 A data model is a contract, not a container.
+
+## Step 4: In-Memory Store _(Closure-Based)_
+
+By the end of this step, you will have:
+
+- A private expense list _(not directly accessible)_
+- Functions to:
+  - add an expense
+  - list expenses
+  - delete an expense
+- No accidental mutation from outside
+- A clean API you can later plug into file storage
+
+### Why we need a store at all
+
+Right now:
+
+- You can **create** an expense
+- But you can’t **remember** it across commands
+
+We need a place to **hold state**.
+
+❌ Global array → bad
+❌ Mutating random objects → bad
+
+✅ Closure → correct
+
+### Create the store module
+
+Create a new file named `store.js` inside `utils` folder:
+This file will **export a function**, not data.
+
+### The Core Idea _(before code)_
+
+> We create a function that owns an array.
+> That array lives **only inside the function scope**.
+> Returned functions can access it → closure.
+
+That's it.
+
+### Implement the store
+
+> commit hash **315dd81**
+
+```js
+// store.js
+
+function createExpenseStore() {
+  const expenses = [];
+
+  function add(expense) {
+    expenses.push(expense);
+  }
+
+  function getAll() {
+    return [...expenses]; // defensive copy
+  }
+
+  function removeById(id) {
+    const index = expenses.findIndex((e) => e.id === id);
+
+    if (index === -1) {
+      return false;
+    }
+
+    expenses.splice(index, 1);
+    return true;
+  }
+
+  return {
+    add,
+    getAll,
+    removeById,
+  };
+}
+
+module.exports = { createExpenseStore };
+```
+
+#### What just happened?
+
+**🔒 Private state**
+
+```js
+const expenses = [];
+```
+
+- Cannot be accessed from outside
+- Only functions inside this scope can touch it
+
+**🧠 Closure**
+
+**Each returned function:**
+
+- **closes over** `expenses`
+- Keeps it alive in memory
+- Shares the same array
+
+**🛡 Defensive copy**
+
+```js
+return [...expenses];
+```
+
+Prevents:
+
+```js
+store.getAll().push(fakeExpense); // ❌
+```
+
+This is **real engineering discipline**.
+
+### Wire the store into `index.js`
+
+> commit hash **fb6db31**
+
+At the top of `index.js`:
+
+```js
+const { createExpenseStore } = require("./store");
+```
+
+Create **one store instance**:
+
+```js
+const store = createExpenseStore();
+```
+
+> ⚠️ Important: This must be created once, not per command.
+
+### Connect add command to the store
+
+> commit hash **1ec3355**
+
+Inside `add` command:
+
+```js
+const expense = createExpense({
+  title,
+  amount: parsedAmount,
+});
+
+store.add(expense);
+
+console.log("Expense added:", expense);
+```
+
+### Connect `list` & `delete` command
+
+> commit hash **df84441**
+
+Replace `list` handler with:
+
+```js
+list: () => {
+  const expenses = store.getAll();
+
+  if (expenses.length === 0) {
+    console.log("No expenses found.");
+    return;
+  }
+
+  expenses.forEach((e) => {
+    console.log(`- ${e.title}: ₹${e.amount}`);
+  });
+},
+```
+
+And for `delete`:
+
+```js
+delete: (args) => {
+  const [id] = args;
+  assert(id, "❌ Expense ID is required");
+
+  const removed = store.removeById(id);
+
+  assert(removed, `❌ No expense found with id ${id}`);
+
+  console.log("Expense deleted:", id);
+},
+```
+
+### Test the behavior (IMPORTANT)
+
+Run in the **same process**:
+
+```bash
+> node index.js add "Tea" 20
+> node index.js list
+```
+
+⚠️ You will notice something important:
+
+> Expenses do NOT persist across runs
+
+This is expected and correct.
+
+**Why?**
+
+- In-memory store lives only for the **lifetime of the process**
+- File persistence comes later
+
+This proves your **store logic is correct**.
+
+### What concepts you just USED _(not learned — USED)_
+
+- Closures (real, not toy examples)
+- Encapsulation without classes
+- Functions as APIs
+- Objects as module boundaries
+- Memory lifetime awareness
+- Defensive copying
+- Error handling discipline
+
+This is **backend-grade JavaScript**.
+
+### Mental anchor _(lock this in)_
+
+> If a function lives long, everything it closes over lives long too.
+
+You are now **using closures intentionally**, not accidentally.

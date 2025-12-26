@@ -37,7 +37,8 @@ const commands = {
       amount: parsedAmount,
     });
 
-    console.log("Created expense: ", expense);
+    store.add(expense);
+    console.log("Expense added: ", expense);
   },
   list: (args) => {
     assert(args.length === 0, "❌ List command does not take any arguments");

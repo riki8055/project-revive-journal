@@ -13,7 +13,7 @@ function assert(condition, message) {
 function formatExpense(expense) {
   const date = new Date(expense.createdAt).toLocaleDateString();
 
-  return `[${expense.id}] ${expense.title} - ₹${expense.amount} (${expense.date})`;
+  return `[${expense.id}] ${expense.title} - ₹${expense.amount} (${date})`;
 }
 
 async function main() {
@@ -62,9 +62,16 @@ async function main() {
         return;
       }
 
-      expenses.forEach((e) => {
-        console.log(`- ${e.title}: ₹${e.amount}`);
+      let total = 0;
+
+      expenses.forEach((expense) => {
+        console.log(formatExpense(expense));
+
+        total += expense.amount;
       });
+
+      console.log("-----------------------");
+      console.log(`Total: ₹${total}`);
     },
     delete: async (args) => {
       const [id] = args;

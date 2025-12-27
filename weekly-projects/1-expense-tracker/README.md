@@ -755,3 +755,418 @@ This is **backend-grade JavaScript**.
 > If a function lives long, everything it closes over lives long too.
 
 You are now **using closures intentionally**, not accidentally.
+
+## Step 5: Persistence Layer _(File System)_
+
+By the end of this step:
+
+- Expenses are saved to a file _(`expenses.json`)_
+- Expenses are loaded when the app starts
+- In-memory store + file system stay in sync
+- All I/O is async
+- Errors are handled cleanly
+
+### Mental model _(important before code)_
+
+We will follow this rule:
+
+> The store owns the data. The persistence layer **only loads and saves it**.
+
+### Decide persistence format
+
+We will use:
+
+- **JSON**
+- One file
+- Simple array
+
+> If file doesn’t exist → start empty.
+
+### Create persistence module inside `utils`, name it `storage.js` & Use Node's fs/promises
+
+> commit hash **d48e3fc**
+
+```js
+// storage.js
+
+const fs = require("fs/promises");
+const path = require("path");
+
+const DATA_FILE = path.join(__dirname, "expenses.json");
+```
+
+Why:
+
+- `fs/promises` → async / await
+- `path.join` → OS-safe paths
+
+### Implement `loadExpenses`
+
+> commit hash **43e9629**
+
+```js
+async function loadExpenses() {
+  try {
+    const data = await fs.readFile(DATA_FILE, "utf-8");
+    const parsed = JSON.parse(data);
+
+    if (!Array.isArray(parsed)) {
+      throw new Error("Invalid data format");
+    }
+
+    return parsed;
+  } catch (err) {
+    // File not found → first run → no expenses
+    if (err.code === "ENOENT") {
+      return [];
+    }
+
+    throw err;
+  }
+}
+```
+
+What this does _(mechanically)_
+
+- Reads file
+- Parses JSON
+- Validates shape
+- Handles “file not found” gracefully
+- Fails loudly for real corruption
+
+This is **professional behavior**.
+
+### Implement `saveExpenses` + export `loadExpenses` & `saveExpenses` modules
+
+> commit hash **3dc6419**
+
+```js
+async function saveExpenses(expenses) {
+  const data = JSON.stringify(expenses, null, 2);
+  await fs.writeFile(DATA_FILE, data);
+}
+
+// Export
+module.exports = {
+  loadExpenses,
+  saveExpenses,
+};
+```
+
+Notes:
+
+- `null, 2` → readable JSON
+- Atomic overwrite _(simple & fine for CLI)_
+
+### Upgrade the store to accept initial data
+
+> commit hash **837301c**
+
+Modify `store.js`.
+
+Before:
+
+```js
+function createExpenseStore() {
+  const expenses = [];
+```
+
+After:
+
+```js
+function createExpenseStore(initialExpenses = []) {
+  const expenses = [...initialExpenses];
+```
+
+This allows:
+
+- Loading from file once
+- Keeping store private
+
+### Wire persistence into `index.js` + make command handlers & execution async
+
+> commit hash **e1f8d30**
+
+At the top:
+
+```js
+const { loadExpenses, saveExpenses } = require("./utils/storage");
+```
+
+Make your entry point **async**:
+
+```js
+async function main() {
+  const initialExpenses = await loadExpenses();
+  const store = createExpenseStore(initialExpenses);
+
+  // commands defined here
+}
+
+main().catch((err) => {
+  console.error("❌ Fatal error:", err.message);
+  process.exit(1);
+});
+```
+
+⚠️ Important:
+
+- Store is created **after loading**
+- One store per process
+
+### Persist on every mutation
+
+In `add` command:
+
+```js
+store.add(expense);
+await saveExpenses(store.getAll());
+```
+
+In `delete` command:
+
+```js
+store.removeById(id);
+await saveExpenses(store.getAll());
+```
+
+### Make command handlers & execution **async**
+
+Update command map:
+
+```js
+const commands = {
+  add: async (args) => { ... },
+  list: async () => { ... },
+  delete: async (args) => { ... },
+};
+
+// Execution
+await action(commandArgs);
+```
+
+### Final working codebase after Step 5
+
+`index.js`:
+
+```js
+const { createExpenseStore } = require("./utils/store");
+const { loadExpenses, saveExpenses } = require("./utils/storage");
+const { createExpense } = require("./utils/expense");
+
+// Validation Helper Fn
+function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  const command = args[0];
+  const commandArgs = args.slice(1);
+
+  if (!command) {
+    /*
+     * undefined command is real scenario
+     * we are explicitly handling it
+     */
+    console.error("❌ No command provided!");
+    process.exit(1);
+  }
+
+  // Load persisted data
+  const initialExpenses = await loadExpenses();
+  const store = createExpenseStore(initialExpenses);
+
+  const commands = {
+    add: async (args) => {
+      const [title, amount] = args;
+      assert(title, "❌ Title is required!");
+      assert(amount, "❌ Amount is required!");
+
+      const parsedAmount = Number(amount);
+      assert(!Number.isNaN(parsedAmount), "❌ Amount must be a number!");
+
+      const expense = createExpense({
+        title,
+        amount: parsedAmount,
+      });
+
+      store.add(expense);
+      await saveExpenses(store.getAll());
+
+      console.log("✅ Expense added: ", expense);
+    },
+    list: (args) => {
+      assert(args.length === 0, "❌ List command does not take any arguments");
+
+      const expenses = store.getAll();
+      if (expenses.length === 0) {
+        console.log("No expenses found.");
+        return;
+      }
+
+      expenses.forEach((e) => {
+        console.log(`- ${e.title}: ₹${e.amount}`);
+      });
+    },
+    delete: async (args) => {
+      const [id] = args;
+      assert(id, "❌ Expense ID is required");
+
+      const removed = store.removeById(id);
+      assert(removed, `❌ No expense found with id ${id}`);
+
+      await saveExpenses(store.getAll());
+
+      console.log("Expense deleted: ", id);
+    },
+  };
+
+  const action = commands[command];
+  if (!action) {
+    console.error(`❌ Unknown command: ${command}`);
+    process.exit(1);
+  }
+
+  try {
+    await action(commandArgs); // Command dispatch via object lookup
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
+main().catch((err) => {
+  console.error("❌ Fatal error: ", err.message);
+  process.exit(1);
+});
+```
+
+`utils/store.js`:
+
+```js
+function createExpenseStore(initialExpenses = []) {
+  const expenses = [...initialExpenses];
+
+  function add(expense) {
+    expenses.push(expense);
+  }
+
+  function getAll() {
+    return [...expenses]; // defensive copy
+  }
+
+  function removeById(id) {
+    const index = expenses.findIndex((e) => e.id === id);
+
+    if (index === -1) {
+      return false;
+    }
+
+    expenses.splice(index, 1);
+    return true;
+  }
+
+  return {
+    add,
+    getAll,
+    removeById,
+  };
+}
+
+module.exports = { createExpenseStore };
+```
+
+`utils/storage.js`:
+
+```js
+const fs = require("fs/promises");
+const path = require("path");
+
+const DATA_FILE = path.join(__dirname, "expenses.json");
+
+async function loadExpenses() {
+  try {
+    const data = await fs.readFile(DATA_FILE, "utf-8");
+    const parsed = JSON.parse(data);
+
+    if (!Array.isArray(parsed)) {
+      throw new Error("Invalid data format");
+    }
+
+    return parsed;
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      // First run, no file yet
+      return [];
+    }
+    throw err;
+  }
+}
+
+async function saveExpenses(expenses) {
+  const data = JSON.stringify(expenses, null, 2);
+  await fs.writeFile(DATA_FILE, data);
+}
+
+module.exports = {
+  loadExpenses,
+  saveExpenses,
+};
+```
+
+### Test persistence _(MANDATORY)_
+
+Run these **separately**:
+
+```bash
+> node index.js add "Tea" 20
+> node index.js add "Coffee" 50
+> node index.js list
+```
+
+_(optional)_ Then close terminal, reopen, run:
+
+```bash
+node index.js list
+```
+
+Observe:
+
+✅ Expenses should still be there
+✅ `expenses.json` should be readable
+✅ No crashes
+
+`expenses.json` — Auto-generated _(Example)_
+
+```js
+[
+  {
+    id: "e7a3c9c4-3b71-4a62-9d3c-8f9c4c0a9a12",
+    title: "Tea",
+    amount: 20,
+    createdAt: 1734950000000,
+  },
+];
+```
+
+### What you just built _(this is big)_
+
+You now have:
+
+- Async file I/O
+- Graceful first-run behavior
+- Clean separation of concerns
+- No global state
+- No tight coupling
+- Predictable failure modes
+
+This is **real backend architecture**, not tutorial junk.
+
+### Mental anchor _(lock this in)_
+
+> Persistence should support your model, not control it.
+
+You did exactly that.

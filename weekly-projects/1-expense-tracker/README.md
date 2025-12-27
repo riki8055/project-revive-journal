@@ -1136,7 +1136,9 @@ node index.js list
 Observe:
 
 ✅ Expenses should still be there
+
 ✅ `expenses.json` should be readable
+
 ✅ No crashes
 
 `expenses.json` — Auto-generated _(Example)_
@@ -1170,3 +1172,123 @@ This is **real backend architecture**, not tutorial junk.
 > Persistence should support your model, not control it.
 
 You did exactly that.
+
+## Step 6: List Expenses _(Formatted Output)_
+
+When the user runs:
+
+```bash
+node index.js list
+```
+
+They should see:
+
+- Clean, readable output
+- Consistent formatting
+- IDs visible (for delete/edit)
+- Totals (very important for usefulness)
+- No raw objects dumped
+
+### Decide the output contract
+
+We will print one expense per line, with:
+
+```bash
+[ID]  TITLE  — ₹AMOUNT  (DATE)
+```
+
+And at the end:
+
+And at the end:
+
+```bash
+-----------------------
+Total: ₹XXX
+```
+
+This is:
+
+- Human-friendly
+- CLI-appropriate
+- Debuggable _(ID visible)_
+
+### Create a formatter _(single responsibility)_
+
+> commit hash **32d0924**
+
+Add this helper inside `index.js` _(above `commands`)_:
+
+```js
+function formatExpense(expense) {
+  const date = new Date(expense.createdAt).toLocaleDateString();
+
+  return `[${expense.id}]  ${expense.title} — ₹${expense.amount}  (${date})`;
+}
+```
+
+**Why a function?**
+
+- Keeps list logic clean
+- Easy to change formatting later
+- Reusable (export later if needed)
+
+### Update the `list` command
+
+Replace your existing `list` handler with this:
+
+```js
+list: async () => {
+  const expenses = store.getAll();
+
+  if (expenses.length === 0) {
+    console.log("No expenses found.");
+    return;
+  }
+
+  let total = 0;
+
+  expenses.forEach((expense) => {
+    console.log(formatExpense(expense));
+    total += expense.amount;
+  });
+
+  console.log("-----------------------");
+  console.log(`Total: ₹${total}`);
+},
+```
+
+### What this is doing _(mechanically)_
+
+- Retrieves a **defensive copy** of expenses
+- Formats each expense (no raw objects)
+- Accumulates total safely
+- Prints a summary
+
+No mutation. No side effects.
+
+### Example output _(realistic)_
+
+```bash
+[7c1f…]  Tea — ₹20  (12/26/2025)
+[a91b…]  Coffee — ₹50  (12/26/2025)
+-----------------------
+Total: ₹70
+```
+
+This is now a **usable tool**, not a dev dump.
+
+### Mental anchor _(important)_
+
+> Raw data is for machines. Formatted data is for humans.
+
+You just built the human layer.
+
+**What concepts you reinforced here**
+
+- Functions as formatters
+- Template literals
+- Separation of concerns
+- Read-only iteration
+- Intentional UX decisions
+
+This is **engineering maturity**, not “extra polish”.

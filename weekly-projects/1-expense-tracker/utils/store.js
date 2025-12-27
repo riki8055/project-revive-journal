@@ -1,5 +1,5 @@
-function createExpenseStore() {
-  const expenses = [];
+function createExpenseStore(initialExpenses = []) {
+  const expenses = [...initialExpenses];
 
   function add(expense) {
     expenses.push(expense);

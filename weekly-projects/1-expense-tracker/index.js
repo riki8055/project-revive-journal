@@ -9,6 +9,13 @@ function assert(condition, message) {
   }
 }
 
+// Formatter Helper Fn
+function formatExpense(expense) {
+  const date = new Date(expense.createdAt).toLocaleDateString();
+
+  return `[${expense.id}] ${expense.title} - ₹${expense.amount} (${expense.date})`;
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const command = args[0];

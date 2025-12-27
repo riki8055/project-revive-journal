@@ -21,3 +21,13 @@ async function loadExpenses() {
     throw error;
   }
 }
+
+async function saveExpenses(expenses) {
+  const data = JSON.stringify(expenses, null, 2);
+  await fs.writeFile(DATA_FILE, data);
+}
+
+module.exports = {
+  loadExpenses,
+  saveExpenses,
+};

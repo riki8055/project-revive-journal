@@ -2,6 +2,19 @@ const { createExpenseStore } = require("./utils/store");
 const { loadExpenses, saveExpenses } = require("./utils/storage");
 const { createExpense } = require("./utils/expense");
 
+// Error Helper
+function handleError(err) {
+  // Known / expected errors
+  if (err instanceof Error) {
+    console.error("❌", err.message);
+  } else {
+    // Truly unknown (should rarely happen)
+    console.error("❌ Unknown error:", err);
+  }
+
+  process.exit(1);
+}
+
 // Validation Helper Fn
 function assert(condition, message) {
   if (!condition) {
@@ -95,12 +108,8 @@ async function main() {
   try {
     await action(commandArgs); // Command dispatch via object lookup
   } catch (error) {
-    console.error(error.message);
-    process.exit(1);
+    handleError(error);
   }
 }
 
-main().catch((err) => {
-  console.error("❌ Fatal error: ", err.message);
-  process.exit(1);
-});
+main().catch(handleError);

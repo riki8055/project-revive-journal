@@ -2,6 +2,8 @@ const { createExpenseStore } = require("./utils/store");
 const { loadExpenses, saveExpenses } = require("./utils/storage");
 const { createExpense } = require("./utils/expense");
 
+/* -------------------- Utilities -------------------- */
+
 function cleanupAndExit(code = 0) {
   // Future-safe cleanup hook
   // (nothing async needed right now)
@@ -40,6 +42,8 @@ function formatExpense(expense) {
   return `[${expense.id}] ${expense.title} - ₹${expense.amount} (${date})`;
 }
 
+/* -------------------- Signal Handling -------------------- */
+
 process.on("SIGINT", () => {
   console.log("\n🛑 Interrupted (Ctrl + C)");
   cleanupAndExit(130); // 130 = standard Ctrl+C exit code
@@ -49,6 +53,8 @@ process.on("SIGTERM", () => {
   console.log("\n🛑 Termination signal received");
   cleanupAndExit(143); // 128 + 15 (SIGTERM)
 });
+
+/* -------------------- Main Program -------------------- */
 
 async function main() {
   const args = process.argv.slice(2);
@@ -133,6 +139,6 @@ async function main() {
   }
 }
 
-setTimeout(() => {
-  main().catch(handleError);
-}, 1000);
+/* -------------------- Entry Point -------------------- */
+
+main().catch(handleError);

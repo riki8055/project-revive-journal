@@ -1292,3 +1292,182 @@ You just built the human layer.
 - Intentional UX decisions
 
 This is **engineering maturity**, not “extra polish”.
+
+---
+
+## Wrap-Up Review: Architecture & Tradeoffs
+
+### 1️⃣ Architecture Overview _(What you actually built)_
+
+You built a **layered CLI application**, even if you never used that word.
+
+#### High-level flow
+
+```txt
+CLI Input
+   ↓
+Command Router (index.js)
+   ↓
+Validation Layer
+   ↓
+Domain Model (expense.js)
+   ↓
+In-Memory Store (store.js)
+   ↓
+Persistence Layer (storage.js)
+   ↓
+Disk (expenses.json)
+```
+
+This is **not accidental**. This is real system design.
+
+### 2️⃣ Core Architectural Decisions _(and why they matter)_
+
+#### ✅ Decision 1: Functional + Closure-based design _(no classes)_
+
+**What you chose**
+
+- Factory functions
+- Closures for state
+- Plain objects for data
+
+**Why this was correct**
+
+- Avoids `this` complexity
+- No inheritance confusion
+- Explicit data flow
+- Easier to reason about in Node CLIs
+
+**Tradeoff**
+
+- Less “OOP-looking” to Java-style devs
+- No polymorphism via classes _(yet)_
+
+👉 **Verdict:** Correct choice for a CLI + early backend learning.
+
+#### ✅ Decision 2: Single in-memory store as source of truth
+
+**What you chose**
+
+- One store instance
+- Store owns state
+- File system mirrors store
+
+**Why this is strong**
+
+- No duplicated state
+- Predictable mutations
+- Easy to test
+- Easy to swap persistence later
+
+**Tradeoff**
+
+- Entire dataset loaded into memory
+- Not suitable for millions of records
+
+👉 **Verdict:** Correct for CLI scale. Premature optimization avoided.
+
+#### ✅ Decision 3: Persistence as a separate module
+
+**What you avoided**
+
+- File I/O inside commands
+- File I/O inside store
+- Global JSON reads/writes
+
+**Why this matters**
+
+- Separation of concerns
+- Persistence is replaceable _(DB later)_
+- Bugs are localized
+
+**Tradeoff**
+
+- Slightly more files
+- Requires discipline to maintain boundaries
+
+👉 **Verdict:** Senior-level instinct.
+
+#### ✅ Decision 4: Explicit validation boundaries
+
+You validated in **two places** on purpose:
+
+| Layer | What it validates |
+| ----- | ----------------- |
+| CLI   | Presence, format  |
+| Model | Data correctness  |
+
+**Why this is excellent**
+
+- Prevents bad state early
+- Prevents corrupted persistence
+- Makes bugs obvious
+
+**Tradeoff**
+
+- Some “repetition”
+- More code than naïve scripts
+
+👉 **Verdict:** This is how real systems stay alive.
+
+#### ✅ Decision 5: Centralized error boundary
+
+**What you did**
+
+- Errors bubble up _(instead of getting swallowed)_
+- One handler prints + exits
+- No helper calls `process.exit()`
+
+**Why this is critical**
+
+- Predictable failures
+- Correct exit codes
+- CLI behaves like `git`, `npm`, etc.
+
+**Tradeoff**
+
+- Must be disciplined about throwing errors
+- Slightly more boilerplate
+
+👉 **Verdict:** Production-grade behavior.
+
+#### ✅ Decision 6: Explicit async flow control
+
+**What you avoided**
+
+- Fire-and-forget async
+- Nested callbacks
+- Silent promise rejections
+
+**Why this matters**
+
+- No partial writes
+- No race conditions
+- Deterministic execution
+
+**Tradeoff**
+
+- Everything feels “slower” to write
+- But safer
+
+👉 **Verdict:** This is backend maturity.
+
+### 3️⃣ Why this architecture scales _(even if the app is small)_
+
+**Without changing fundamentals, you can later:**
+
+- Replace JSON with SQLite / Mongo
+- Add categories
+- Add monthly summaries
+- Add exports _(CSV)_
+- Add authentication _(if CLI grows)_
+- Convert CLI → API
+
+**That’s because you separated:**
+
+- Intent
+- State
+- Persistence
+- Presentation
+
+This is **real software architecture**, not project fluff.

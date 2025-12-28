@@ -2,6 +2,17 @@ const { createExpenseStore } = require("./utils/store");
 const { loadExpenses, saveExpenses } = require("./utils/storage");
 const { createExpense } = require("./utils/expense");
 
+function cleanupAndExit(code = 0) {
+  // Future-safe cleanup hook
+  // (nothing async needed right now)
+
+  if (code !== 0) {
+    console.log("\n❌ Exiting due to interruption.");
+  }
+
+  process.exit(code);
+}
+
 // Error Helper
 function handleError(err) {
   // Known / expected errors
@@ -12,7 +23,7 @@ function handleError(err) {
     console.error("❌ Unknown error:", err);
   }
 
-  process.exit(1);
+  cleanupAndExit(1);
 }
 
 // Validation Helper Fn
@@ -28,6 +39,16 @@ function formatExpense(expense) {
 
   return `[${expense.id}] ${expense.title} - ₹${expense.amount} (${date})`;
 }
+
+process.on("SIGINT", () => {
+  console.log("\n🛑 Interrupted (Ctrl + C)");
+  cleanupAndExit(130); // 130 = standard Ctrl+C exit code
+});
+
+process.on("SIGTERM", () => {
+  console.log("\n🛑 Termination signal received");
+  cleanupAndExit(143); // 128 + 15 (SIGTERM)
+});
 
 async function main() {
   const args = process.argv.slice(2);
@@ -112,4 +133,6 @@ async function main() {
   }
 }
 
-main().catch(handleError);
+setTimeout(() => {
+  main().catch(handleError);
+}, 1000);

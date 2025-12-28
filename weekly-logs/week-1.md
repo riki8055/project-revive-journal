@@ -2,7 +2,7 @@
 
 ## What I built
 
-(links to repos, features, or commits)
+<a href="https://github.com/riki8055/project-revive-journal/tree/e418f84f56cb549a3d10947e6ab49b6a6e40465e/weekly-projects/1-expense-tracker">CLI Expense Tracker (Node.js)</a>
 
 ## What I learned
 
@@ -50,4 +50,6 @@
 
 ## What I will do next week
 
-(clear and limited)
+### Web Fundamental _(No Frameworks)_
+
+Browser, HTTP, DOM

@@ -339,7 +339,7 @@ Truth:
 |------|-----------------------|
 | 500  | Internal Server Error |
 | 502  | Bad Gateway           |
-| 404  | Not Found             |
+| 503  | Service Unavailable   |
 
 These mean:
 > “Request was valid. Server failed.”

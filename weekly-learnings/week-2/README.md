@@ -194,3 +194,188 @@ This knowledge explains:
 - Why Tailwind works fast
 - Why bad CSS kills UX
 - Why animations stutter
+
+---
+
+Month 1 > Week 2 > Day 2
+
+# HTTP Methods, Headers, Status Codes
+
+> This is the language browsers and servers speak. Everything else (APIs, auth, cookies, caching) sits on top of this.
+
+At its core, HTTP is:
+
+> A stateless request–response protocol over the network
+
+No memory. No session. No browser intelligence.
+Just **request → response**.
+
+## 1. HTTP Request: 4 Things _(Always)_
+
+Every HTTP request has exactly these components:
+
+```
+METHOD /path HTTP/1.1
+Headers
+(blank line)
+Body (optional)
+```
+
+Example:
+
+```
+POST /login HTTP/1.1
+Host: example.com
+Content-Type: application/json
+
+{ "email": "...", "password": "..." }
+```
+
+## 2. HTTP Methods — “What do you want me to do?"
+
+Methods define **intent**, not implementation.
+
+### Core Methods _(Non-Negotiable)_
+
+| Method | Meaning         | Must Know Truth                    |
+|--------|-----------------|------------------------------------|
+| GET    | Fetch data      | No body (by convention), cacheable |
+| POST   | Create / Submit | Has body, not idempotent           |
+| PUT    | Replace         | Full replacement                   |
+| PATCH  | Modify          | Partial update                     |
+| DELETE | Remove          | Idempotent                         |
+
+### Idempotency _(Very Important)_
+
+- **GET, PUT, DELETE** → same request = same result
+
+- **POST** → may create multiple resources if repeated
+
+Browsers, proxies, retries depend on this.
+
+## 3. Headers — Metadata That Controls Everything
+
+Headers are **instructions**, not decoration.
+
+### Request Headers _(Browser → Server)_
+
+| Header        | Purpose                        |
+|---------------|--------------------------------|
+| Host          | Which server                   |
+| User-Agent    | Browser identity               |
+| Accept        | What response formats I accept |
+| Content-Type  | What I'm sending               |
+| Authorization | Who I am                       |
+| Cookie        | Stored client state            |
+
+Example:
+
+```
+Accept: application/json
+Authorization: Bearer <token>
+```
+
+### Response Headers _(Server → Browser)_
+
+| Header         | Purpose             |
+|----------------|---------------------|
+| Content-Type   | What I sent         |
+| Content-Length | Size                |
+| Set-Cookie     | Store client state  |
+| Cache-Control  | Caching rules       |
+| Location       | Redirect target     |
+
+Example:
+
+```
+Set-Cookie: sessionId=abc; HttpOnly; Secure
+```
+
+## 4. Status Codes — Outcome of the Contract
+
+Status codes are **machine-readable outcomes**.
+
+### 1xx — Informational
+
+- Rarely used directly
+
+### 2xx — Success
+
+| Code | Meaning    |
+|------|------------|
+| 200  | OK         |
+| 201  | Created    |
+| 204  | No Content |
+
+> 💡 `204` is powerful for delete/update operations.
+
+### 3xx — Redirection
+
+| Code | Meaning              |
+|------|----------------------|
+| 301  | Permanent Redirect   |
+| 302  | Temporary Redirect   |
+| 304  | Not Modified (cache) |
+
+> ⚠️ 304 saves bandwidth + render time
+
+### 4xx — Client Errors
+
+| Code | Meaning           |
+|------|-------------------|
+| 400  | Bad Request       |
+| 401  | Unauthorised      |
+| 403  | Forbidden         |
+| 404  | Not Found         |
+| 429  | Too Many Requests |
+
+Truth:
+- 401 → “Who are you?”
+- 403 → “I know you, but no.”
+
+### 5xx — Server Errors
+
+| Code | Meaning               |
+|------|-----------------------|
+| 500  | Internal Server Error |
+| 502  | Bad Gateway           |
+| 404  | Not Found             |
+
+These mean:
+> “Request was valid. Server failed.”
+
+## Statelessness — The Hidden Rule
+
+HTTP **does not remember anything**.
+
+So how do websites “remember” you?
+
+Answers:
+
+- Cookies
+- Tokens
+- Headers
+- URL params
+
+All hacks **around** statelessness.
+
+## 6. Browser Reality _(Important)_
+
+When browser makes a request:
+
+- It automatically adds headers
+- It handles redirects
+- It stores cookies
+- It enforces CORS
+- It caches aggressively
+
+You never talk to HTTP raw — browser mediates it.
+
+## Final Mental Map
+
+```txt
+Client intent → METHOD
+Context & rules → HEADERS
+Action result → STATUS CODE
+Actual data → BODY
+```

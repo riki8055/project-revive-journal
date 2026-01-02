@@ -14,6 +14,20 @@
 
 - Browser renders **trees**, not files
 
+- DOM is not HTML. DOM lives in memory
+
+- JS manipulates nodes, not strings
+
+- Writes can trigger rendering
+
+- Layout is expensive
+
+- innerHTML destroys state
+
+- Events flow through DOM
+
+- Performance = fewer mutations
+
 - (d4) Forms are browser-native
 
 - Validation happens before HTTP

@@ -14,6 +14,20 @@
 
 - Browser renders **trees**, not files
 
+- (d4) Forms are browser-native
+
+- Validation happens before HTTP
+
+- Failed validation = no request
+
+- `name` controls serialization
+
+- Client validation ≠ security
+
+- Server validation is final
+
+- Status codes communicate failure
+
 ## What confused me
 
 ## What I avoided

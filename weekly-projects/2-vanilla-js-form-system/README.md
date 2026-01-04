@@ -161,3 +161,126 @@ You are now seeing **real browser behavior**, not theory.
 - Browser already solves many problems
 
 Everything else we add later is **progressive enhancement**.
+
+## Step 2: Controlled DOM Access Layer
+
+### Objectives
+
+Create a **single, disciplined entry point** for:
+
+- Reading DOM
+- Writing DOM
+- Avoiding repeated queries
+- Preventing mutation chaos
+
+This is **architecture**, not syntax.
+
+### 1️⃣ The Problem We’re Solving
+
+Typical beginner code looks like this:
+
+```js
+document.querySelector("#email").value;
+document.querySelector("#email").classList.add("error");
+document.querySelector("#email").focus();
+```
+
+Problems:
+
+- Repeated DOM queries
+- Hard to change selectors
+- Performance cost
+- Impossible to reason about mutations
+
+We fix this **now**, before logic grows.
+
+### 2️⃣ Create a DOM Access Module
+
+Create a new file:
+
+📁 `js/dom.js`
+
+<img src="codesnaps/code1.png" width=400 />
+
+Why this matters:
+
+- One source of truth
+- Read-only references
+- No accidental re-querying
+
+### 3️⃣ Rules of This Layer _(Non-Negotiable)_
+
+These rules apply **throughout the project**:
+
+- ❌ No `document.querySelector` outside this file
+- ❌ No inline DOM queries in logic files
+- ✅ DOM nodes are **cached once**
+- ✅ DOM writes go through known references
+
+This enforces **fewer mutations by design**.
+
+### 4️⃣ Defensive Checks _(Browser Reality)_
+
+DOM can fail silently.
+
+Add guards:
+
+```js
+if (!dom.form) {
+  throw new Error("Form element not found");
+}
+```
+
+Fail fast > silent bugs.
+
+### 5️⃣ Entry Script
+
+Create:
+
+📁 `js/main.js`
+
+<img src="codesnaps/code2.png" width=400 />
+
+Add to HTML:
+
+```html
+<script type="module" src="js/main.js"></script>
+```
+
+Why `type="module"`?
+
+- Scoped variables
+- Explicit imports
+- Cleaner architecture
+- Real-world standard
+
+### 6️⃣ What to Observe Now
+
+- Submit form
+- Browser validation still works
+- Console logs only when validation passes
+- No behavior change yet
+
+This confirms:
+
+> JS layers on top of native behavior
+
+### 7️⃣ Why This Step Is Subtly Powerful
+
+You just:
+
+- Separated **structure** from **behavior**
+- Prepared for validation logic
+- Reduced mutation surface
+- Avoided spaghetti selectors
+- Created framework-like discipline without a framework
+
+React/Vue do this internally — you’re doing it **explicitly**.
+
+### 8️⃣ Core Mental Models Locked In
+
+1. DOM access should be centralized
+2. Cache DOM nodes once
+3. Reads and writes must be controlled
+4. Structure first, behavior later
+5. JS enhances — browser remains boss

@@ -404,3 +404,224 @@ You now have:
 - No network calls
 
 That’s intentional.
+
+## Step 4: Validation Failure UX System
+
+### Objectives
+
+When validation fails, the system must:
+- Show *"clear, inline errors**
+- Highlight invalid fields
+- Focus the **first invalid input**
+- Clear errors when user fixes input
+- Do all this with **disciplined DOM writes**
+
+This is where most forms become messy. We won’t.
+
+### 1️⃣ UX Rules _(Non-Negotiable)_
+
+Before code, lock these rules:
+
+1. Errors appear **near the field**
+2. One error per field
+3. First invalid field gets focus
+4. Errors disappear when corrected
+5. No re-rendering the whole form
+6. No `innerHTML` loops
+
+### 2️⃣ Prepare Error Containers _(HTML)_
+
+> commit hash #95d4562
+
+We add **dedicated error elements** once — never dynamically create/destroy them.
+
+**Update** `index.html`
+
+```html
+<div>
+  <label for="name">Full Name</label>
+  <input id="name" name="name" type="text" required minlength="3" />
+  <small class="error" aria-live="polite"></small>
+</div>
+
+<div>
+  <label for="email">Email</label>
+  <input id="email" name="email" type="email" required />
+  <small class="error" aria-live="polite"></small>
+</div>
+
+<div>
+  <label for="password">Password</label>
+  <input id="password" name="password" type="password" required minlength="6" />
+  <small class="error" aria-live="polite"></small>
+</div>
+
+<div>
+  <label for="confirmPassword">Confirm Password</label>
+  <input id="confirmPassword" name="confirmPassword" type="password" required />
+  <small class="error" aria-live="polite"></small>
+</div>
+```
+
+📌 Why this matters:
+- DOM structure is **static**
+- We only mutate **text + classes**
+- Screen readers announce errors _(`aria-live`)_
+
+### 3. Extend Controlled DOM Layer
+
+> commit hash #0243cfe
+
+**Update** `js/dom.js`
+
+```js
+export const dom = {
+  form: document.querySelector("form"),
+
+  inputs: {
+    name: document.querySelector("#name"),
+    email: document.querySelector("#email"),
+    password: document.querySelector("#password"),
+    confirmPassword: document.querySelector("#confirmPassword"),
+  },
+
+  errors: {
+    name: document.querySelector("#name + .error"),
+    email: document.querySelector("#email + .error"),
+    password: document.querySelector("#password + .error"),
+    confirmPassword: document.querySelector("#confirmPassword + .error"),
+  },
+
+  submitButton: document.querySelector("button[type='submit']"),
+};
+
+if (!dom.form) {
+  throw new Error("Form element not found");
+}
+```
+📌 Notice:
+- Still **one DOM access point**
+- Errors mapped explicitly
+- No querying in logic code
+
+### 4. Error Rendering Logic _(Isolated)_
+
+> commit hash #7c29c1d
+
+Create a **UI-only module**.
+
+📁 `js/errors.js`
+
+```js
+import { dom } from "./dom.js";
+
+export function showErrors(errors) {
+  clearErrors();
+
+  let firstInvalidInput = null;
+
+  Object.keys(errors).forEach((field) => {
+    dom.errors[field].textContent = errors[field];
+    dom.inputs[field].classList.add("invalid");
+
+    if (!firstInvalidInput) {
+      firstInvalidInput = dom.inputs[field];
+    }
+  });
+
+  if (firstInvalidInput) {
+    firstInvalidInput.focus();
+  }
+}
+
+export function clearErrors() {
+  Object.keys(dom.errors).forEach((field) => {
+    dom.errors[field].textContent = "";
+    dom.inputs[field].classList.remove("invalid");
+  });
+}
+```
+
+📌 Why this is correct:
+- Errors are **batched**
+- Minimal mutations
+- No business logic here
+- Focus handled once
+
+### 5. Wire It into Submission Flow
+
+> commit hash #bfd4627
+
+**Update** `js/main.js`
+
+```js
+import { dom } from "./dom.js";
+import { validateForm } from "./validation.js";
+import { showErrors, clearErrors } from "./errors.js";
+
+dom.form.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  clearErrors();
+
+  const values = getFormValues();
+  const result = validateForm(values);
+
+  if (!result.isValid) {
+    showErrors(result.errors);
+    return;
+  }
+
+  console.log("Form is valid. Ready for submission.");
+});
+
+function getFormValues() {
+  return {
+    name: dom.inputs.name.value,
+    email: dom.inputs.email.value,
+    password: dom.inputs.password.value,
+    confirmPassword: dom.inputs.confirmPassword.value,
+  };
+}
+```
+
+### 6. Minimal CSS _(Just for Clarity)_
+
+```html
+<style>
+  .error {
+    color: red;
+    font-size: 0.8rem;
+  }
+
+  .invalid {
+    border-color: red;
+  }
+</style>
+```
+
+(Not styling lesson — just visibility.)
+
+### 7. What You’ve Achieved (Step 4)
+
+✔ Clear validation feedback
+
+✔ No DOM chaos
+
+✔ Accessibility respected
+
+✔ First invalid field focused
+
+✔ Errors cleared intelligently
+
+✔ Browser + JS roles cleanly separated
+
+This is **production-grade form UX**.
+
+### Core Insight _(Lock This In)_
+
+- Validation decides **truth**
+- UX decides **communication**
+- DOM decides **cost**
+
+You kept them separate — that’s senior-level discipline.

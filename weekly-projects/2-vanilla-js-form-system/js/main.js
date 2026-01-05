@@ -2,18 +2,18 @@
 
 import { dom } from "./dom.js";
 import { validateForm } from "./validation.js";
+import { showErrors, clearErrors } from "./errors.js";
 
 dom.form.addEventListener("submit", (event) => {
   event.preventDefault(); // we take control now
 
-  const formValues = getFormValues();
+  clearErrors()
 
+  const formValues = getFormValues();
   const result = validateForm(formValues);
 
-  console.log("Validation result: ", result);
-
   if (!result.isValid) {
-    // Step 4 will render errors
+    showErrors(result.errors)
     return;
   }
 

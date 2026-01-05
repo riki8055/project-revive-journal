@@ -410,7 +410,7 @@ That’s intentional.
 ### Objectives
 
 When validation fails, the system must:
-- Show *"clear, inline errors**
+- Show **clear, inline errors**
 - Highlight invalid fields
 - Focus the **first invalid input**
 - Clear errors when user fixes input
@@ -418,7 +418,7 @@ When validation fails, the system must:
 
 This is where most forms become messy. We won’t.
 
-### 1️⃣ UX Rules _(Non-Negotiable)_
+### 1. UX Rules _(Non-Negotiable)_
 
 Before code, lock these rules:
 
@@ -429,7 +429,7 @@ Before code, lock these rules:
 5. No re-rendering the whole form
 6. No `innerHTML` loops
 
-### 2️⃣ Prepare Error Containers _(HTML)_
+### 2. Prepare Error Containers _(HTML)_
 
 > commit hash #95d4562
 

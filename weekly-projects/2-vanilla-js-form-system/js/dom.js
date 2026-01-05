@@ -8,6 +8,12 @@ export const dom = {
     password: document.querySelector("#password"),
     confirmPassword: document.querySelector("#confirmPassword"),
   },
+  errors: {
+    name: document.querySelector("#name + .error"),
+    email: document.querySelector("#email + .error"),
+    password: document.querySelector("#password + .error"),
+    confirmPassword: document.querySelector("#confirmPassword + .error"),
+  },
   submitButton: document.querySelector("button[type='submit'"),
   errorContainer: null, // reserved for later
 };

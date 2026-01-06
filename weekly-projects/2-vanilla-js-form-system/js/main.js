@@ -4,14 +4,12 @@ import { dom } from "./dom.js";
 import { validateForm } from "./validation.js";
 import { showErrors, clearErrors } from "./errors.js";
 
-dom.form.addEventListener("submit", (event) => {
+dom.form.addEventListener("submit", async (event) => {
   event.preventDefault(); // we take control now
 
   clearErrors();
 
   const formValues = serializeManually();
-  console.log("Serialized data: ", formValues);
-
   const result = validateForm(formValues);
 
   if (!result.isValid) {
@@ -19,8 +17,32 @@ dom.form.addEventListener("submit", (event) => {
     return;
   }
 
-  console.log("Form is valid. Ready to submit.");
+  dom.submitButton.disabled = true;
+
+  try {
+    const response = await submitForm(formValues);
+    if (!response.ok) {
+      throw new Error(`Oops! Something went wrong (${response.status})`);
+    }
+
+    console.log(response);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    dom.submitButton.disabled = false;
+  }
 });
+
+async function submitForm(data) {
+  return fetch("/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+}
 
 function serializeManually() {
   return {
@@ -41,4 +63,20 @@ function serializeManually() {
 //   }
 
 //   return data;
+// }
+
+// Handle Server Errors (helper Fn)
+// async function handleServerError(response) {
+//   if (response.status === 422) {
+//     const data = await response.json();
+//     showErrors(data.errors);
+//     return;
+//   }
+
+//   if (response.status === 401) {
+//     alert("Unauthorized. Please log in.");
+//     return;
+//   }
+
+//   alert("Something went wrong. Try again later.");
 // }

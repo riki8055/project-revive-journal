@@ -410,6 +410,7 @@ That’s intentional.
 ### Objectives
 
 When validation fails, the system must:
+
 - Show **clear, inline errors**
 - Highlight invalid fields
 - Focus the **first invalid input**
@@ -464,6 +465,7 @@ We add **dedicated error elements** once — never dynamically create/destroy th
 ```
 
 📌 Why this matters:
+
 - DOM structure is **static**
 - We only mutate **text + classes**
 - Screen readers announce errors _(`aria-live`)_
@@ -499,7 +501,9 @@ if (!dom.form) {
   throw new Error("Form element not found");
 }
 ```
+
 📌 Notice:
+
 - Still **one DOM access point**
 - Errors mapped explicitly
 - No querying in logic code
@@ -543,6 +547,7 @@ export function clearErrors() {
 ```
 
 📌 Why this is correct:
+
 - Errors are **batched**
 - Minimal mutations
 - No business logic here
@@ -631,6 +636,7 @@ You kept them separate — that’s senior-level discipline.
 ### Objectives
 
 You will:
+
 - Serialize form data **manually**
 - Serialize form data using **FormData**
 - Compare outputs with **native browser submission**
@@ -649,6 +655,7 @@ name=value pairs
 Everything else _(validation, UI, fetch)_ is extra.
 
 The browser:
+
 - Reads inputs with `name`
 - Extracts values
 - Encodes them
@@ -676,12 +683,14 @@ function serializeManually() {
 ```
 
 This gives you:
+
 - Full control
 - Explicit structure
 - Easy debugging
 - JSON-ready object
 
 📌 Downside:
+
 - Must update manually when fields change
 
 ### FormData Serialization _(Browser-Native)_
@@ -702,6 +711,7 @@ function serializeWithFormData() {
 ```
 
 📌 Key facts about `FormData`:
+
 - Reads only inputs with `name`
 - Skips disabled fields
 - Handles files automatically
@@ -743,6 +753,7 @@ If not — you’ve found a bug.
 **✅ Manual Serialization**
 
 Use when:
+
 - You want explicit control
 - You send JSON
 - You transform values
@@ -753,6 +764,7 @@ Most APIs → **this**
 **✅ FormData**
 
 Use when:
+
 - You upload files
 - You want browser parity
 - You don’t want to maintain field list
@@ -795,9 +807,98 @@ File uploads → **this**
 ### Where You Are Now _(Big Picture)_
 
 You now control:
+
 - DOM access
 - Validation
 - UX feedback
 - Data extraction
 
 You’re **one step away** from real networking.
+
+## Step 6: Async Submission _(Fetch API)_
+
+### Objectives
+
+We will:
+
+- Send form data via `fetch()`
+- Control headers, method, body
+- Handle HTTP status codes explicitly
+- Observe everything in **Network tab**
+- Prevent duplicate submissions
+
+This is **real client–server behavior**, not a demo.
+
+### 1. Mental Model _(Lock This In)_
+
+When you use `fetch()`:
+
+- Browser **does not navigate**
+- You manually decide:
+  - when to send
+  - what to send
+  - how to handle success/failure
+
+So now:
+
+```bash
+User → Validation → Serialization → Fetch → Response handling
+```
+
+### Decide Payload Format _(Important)_
+
+We’ll send **JSON**, not `application/x-www-form-urlencoded`.
+
+Why?
+
+- Modern APIs expect JSON
+- Easier to debug
+- Explicit structure
+
+### 3. Add Async Submit Function
+
+> commit hash #7b0e630
+
+**Update** `js/main.js`
+
+<img src="codesnaps/code5.png" width=500 />
+
+📌 Notes:
+
+- `async/await` keeps flow readable
+- Button disabled → prevents double submit
+- `finally` guarantees cleanup
+
+### 4. Fetch Logic _(Isolated)_
+
+Add below in the same file **or** extract later.
+
+<img src="codesnaps/code6.png" width=400 />
+
+📌 What this means:
+
+- You control method
+- You control headers
+- You control body
+- Browser sends **exactly this**
+
+### 5. Handle Server Errors by Status Code _(optional)_
+
+```js
+async function handleServerError(response) {
+  if (response.status === 422) {
+    const data = await response.json();
+    showErrors(data.errors);
+    return;
+  }
+
+  if (response.status === 401) {
+    alert("Unauthorized. Please log in.");
+    return;
+  }
+
+  alert("Something went wrong. Try again later.");
+}
+```
+
+This maps **HTTP semantics → UX**, correctly.

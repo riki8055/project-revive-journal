@@ -23,6 +23,10 @@ dom.form.addEventListener("submit", async (event) => {
     const response = await submitForm(formValues);
     if (!response.ok) {
       throw new Error(`Oops! Something went wrong (${response.status})`);
+
+      // OR
+      // await handleServerError(response)
+      // return;
     }
 
     console.log(response);

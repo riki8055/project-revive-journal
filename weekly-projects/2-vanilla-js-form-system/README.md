@@ -902,3 +902,66 @@ async function handleServerError(response) {
 ```
 
 This maps **HTTP semantics → UX**, correctly.
+
+### 6. What to Observe in DevTools _(Do This)_
+
+Open **Network tab** → submit form.
+
+Check:
+
+- Request method: `POST`
+- Headers:
+
+  - `Content-Type`: `application/json`
+
+- Payload:
+
+  ```json
+  {
+    "name": "...",
+    "email": "...",
+    "password": "...",
+    "confirmPassword": "..."
+  }
+  ```
+
+- Status code:
+- 200 / 422 / 500 _(depending on backend/mock)_
+
+This is **ground truth**.
+
+### 7. Common Beginner Mistakes _(You Avoided)_
+
+❌ Not checking `response.ok`
+
+❌ Assuming `fetch` throws on 4xx
+
+❌ Forgetting headers
+
+❌ Double submission
+
+❌ Swallowing server errors
+
+You handled all of them.
+
+### 8. Core Truths Locked In (Step 6)
+
+1. `fetch` does not reject on HTTP errors
+2. Status codes decide control flow
+3. Headers define server behavior
+4. Network tab > console
+5. Async UX must handle loading state
+6. JS now fully controls HTTP
+
+### 9. Where You Are Now
+
+You have built:
+
+- Browser-native form
+- Controlled DOM access
+- Pure validation engine
+- Clean validation UX
+- Correct serialization
+- Real async HTTP submission
+
+🔥 This is **not beginner territory** anymore.

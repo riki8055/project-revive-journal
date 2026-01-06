@@ -625,3 +625,179 @@ This is **production-grade form UX**.
 - DOM decides **cost**
 
 You kept them separate — that’s senior-level discipline.
+
+## Step 5: Form Serialization _(Manual + FormData)_
+
+### Objectives
+
+You will:
+- Serialize form data **manually**
+- Serialize form data using **FormData**
+- Compare outputs with **native browser submission**
+- Understand what HTTP actually receives
+
+No UI changes here. Pure data discipline.
+
+### 1. Mental Model _(Lock This In First)_
+
+A form submission is nothing but:
+
+```js
+name=value pairs
+```
+
+Everything else _(validation, UI, fetch)_ is extra.
+
+The browser:
+- Reads inputs with `name`
+- Extracts values
+- Encodes them
+- Sends them as payload
+
+You’re about to do the same thing **explicitly**.
+
+### 2. Manual Serialization _(Explicit & Educational)_
+
+> commit hash #cf6f9e1
+
+This is **the clearest way to learn**.
+
+Add to `main.js`
+
+```js
+function serializeManually() {
+  return {
+    name: dom.inputs.name.value,
+    email: dom.inputs.email.value,
+    password: dom.inputs.password.value,
+    confirmPassword: dom.inputs.confirmPassword.value,
+  };
+}
+```
+
+This gives you:
+- Full control
+- Explicit structure
+- Easy debugging
+- JSON-ready object
+
+📌 Downside:
+- Must update manually when fields change
+
+### FormData Serialization _(Browser-Native)_
+
+Now use the browser’s built-in serializer.
+
+```js
+function serializeWithFormData() {
+  const formData = new FormData(dom.form);
+
+  const data = {};
+  for (const [key, value] of formData.entries()) {
+    data[key] = value;
+  }
+
+  return data;
+}
+```
+
+📌 Key facts about `FormData`:
+- Reads only inputs with `name`
+- Skips disabled fields
+- Handles files automatically
+- Matches browser submission behavior
+
+### 4. Compare Both _(Important Exercise)_
+
+Update submit handler temporarily:
+
+```js
+dom.form.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  clearErrors();
+
+  const manualData = serializeManually();
+  const formDataData = serializeWithFormData();
+
+  console.log("Manual:", manualData);
+  console.log("FormData:", formDataData);
+
+  const result = validateForm(manualData);
+
+  if (!result.isValid) {
+    showErrors(result.errors);
+    return;
+  }
+
+  console.log("Ready to send payload");
+});
+```
+
+👉 You should see **identical output**.
+
+If not — you’ve found a bug.
+
+### 5. When to Use What _(Real-World Rule)_
+
+**✅ Manual Serialization**
+
+Use when:
+- You want explicit control
+- You send JSON
+- You transform values
+- You validate before sending
+
+Most APIs → **this**
+
+**✅ FormData**
+
+Use when:
+- You upload files
+- You want browser parity
+- You don’t want to maintain field list
+
+File uploads → **this**
+
+### Common Serialization Bugs _(Watch These)_
+
+❌ Missing name attribute
+
+➡ Field never sent
+
+---
+
+❌ Disabled input
+
+➡ Skipped silently
+
+---
+
+❌ Checkbox unchecked
+
+➡ Not included
+
+---
+
+❌ Multiple inputs same name
+
+➡ Server receives array-like data
+
+### Core Truths Locked In _(Step 5)_
+
+- Forms serialize `name=value`
+- JS serialization must match browser behavior
+- Manual = control
+- FormData = parity
+- Serialization happens **before HTTP**
+- Network tab is the final truth
+
+### Where You Are Now _(Big Picture)_
+
+You now control:
+- DOM access
+- Validation
+- UX feedback
+- Data extraction
+
+You’re **one step away** from real networking.

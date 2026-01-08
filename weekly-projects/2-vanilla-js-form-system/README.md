@@ -1336,7 +1336,7 @@ This is **production-grade success handling**.
 - Minimal DOM mutation
 - Reusable logic
 
-8. Core Truths Locked In _(Step 8)_
+### 8. Core Truths Locked In _(Step 8)_
 
 - Success is a state, not a console log
 - UX must reflect server truth

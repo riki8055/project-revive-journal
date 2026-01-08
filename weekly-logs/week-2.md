@@ -53,3 +53,5 @@
 - Nothing
 
 ## What I will do next week
+
+Week 3: Git & Engineering Workflow

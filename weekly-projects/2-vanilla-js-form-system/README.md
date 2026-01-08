@@ -965,3 +965,225 @@ You have built:
 - Real async HTTP submission
 
 🔥 This is **not beginner territory** anymore.
+
+## Step 7: Server Response Handling _(Mock)_
+
+### Objectives
+
+- Mock realistic server responses
+- Handle **success** and **failure** paths
+- Respect **HTTP status codes**
+- Keep frontend logic identical to real production flow
+
+This ensures:
+
+> When a real backend is plugged in later, **nothing breaks**.
+
+### 1. Why Mocking Is Legit _(Mental Model)_
+
+Mocking is **not cheating**.
+
+Senior engineers mock because:
+
+- Backend may not exist yet
+- Backend may be unstable
+- Frontend logic must be testable independently
+
+We simulate **server truth**, not UI guesses.
+
+### 2. Mock Server Contract _(Define First)_
+
+Our fake server will return:
+
+✅ **Success**
+
+```json
+Status: 200
+{
+  "message": "User registered successfully"
+}
+```
+
+❌ **Validation error**
+
+```json
+Status: 422
+{
+  "errors": {
+    "email": "Email already exists"
+  }
+}
+```
+
+❌ **Auth error**
+
+```json
+Status: 401
+{
+  "message": "Unauthorized"
+}
+```
+
+❌ **Server error**
+
+```json
+Status: 500
+{
+  "message": "Internal Server Error"
+}
+```
+
+This mirrors **real REST APIs**.
+
+### 3. Create Mock Server Module
+
+> commit hash **700b630**
+
+📁 `js/mockServer.js`
+
+```js
+export async function mockSubmitForm(data) {
+  // Simulate network latency
+  await delay(800);
+
+  //   fake server-side validation
+  if (data.email === "taken@example.com") {
+    return mockResponse(422, {
+      errors: {
+        email: "Email already exists",
+      },
+    });
+  }
+
+  if (data.email === "unauthorized@example.com") {
+    return mockResponse(401, {
+      message: "Unauthorized",
+    });
+  }
+
+  if (data.email === "crash@example.com") {
+    return mockResponse(500, {
+      message: "Internal Server Error",
+    });
+  }
+
+  // success
+  return mockResponse(200, {
+    message: "User registered successfully"
+  })
+}
+
+// helpers
+
+function mockResponse(status, body) {
+  return {
+    ok: status >= 200 && status <= 300,
+    status,
+    json: async () => body,
+  };
+}
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+```
+
+📌 This object behaves **exactly like `fetch()` response**.
+
+### 4. Wire Mock Server into Main Flow
+
+> commit hash **3514986**
+
+**Update** `js/main.js`
+
+Replace `submitForm()` usage with mock:
+
+```js
+dom.form.addEventListener("submit", async (event) => {
+  event.preventDefault(); // we take control now
+
+  clearErrors();
+
+  const formValues = serializeManually();
+  const result = validateForm(formValues);
+
+  if (!result.isValid) {
+    showErrors(result.errors);
+    return;
+  }
+
+  dom.submitButton.disabled = true;
+
+  try {
+    // const response = await submitForm(formValues);
+
+    // mockSubmitForm
+    const response = await mockSubmitForm(formValues);
+
+    if (!response.ok) {
+      // throw new Error(`Oops! Something went wrong (${response.status})`);
+
+      // OR
+      await handleServerError(response)
+      return;
+    }
+
+    const data = await response.json();
+    console.log(data.message);
+
+  } catch (error) {
+    console.error("Unexpected Error: ", error);
+  } finally {
+    dom.submitButton.disabled = false;
+  }
+});
+```
+
+### 5. Test Scenarios _(Do These Exactly)_
+
+| Email entered            | Expected behaviour     |
+|--------------------------|------------------------|
+| test@gmail.com           | ✅ Success              |
+| taken@example.com        | ❌ Inline email error   |
+| unauthorized@example.com | ❌ Alert unauthorized   |
+| crash@example.com        | ❌ Generic server error |
+
+This proves:
+- Frontend reacts to server truth
+- Validation ≠ server authority
+- Status codes control UX
+
+### 6. Why This Design Is Strong
+
+✔ Same flow as real backend
+
+✔ Same error-handling logic
+
+✔ No UI assumptions
+
+✔ No fetch-specific coupling
+
+✔ Easy to replace later
+
+To switch to real backend later:
+
+```js
+mockSubmitForm → submitForm
+```
+
+Nothing else changes.
+
+### 7. Core Truths Locked In _(Step 7)_
+
+You’ve built:
+- Browser-native form
+- Controlled DOM layer
+- Validation engine
+- Validation UX
+- Serialization
+- Async submission
+- Server-response-driven UI logic
+
+This is **end-to-end frontend engineering**.

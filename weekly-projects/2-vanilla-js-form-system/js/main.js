@@ -3,6 +3,7 @@
 import { dom } from "./dom.js";
 import { validateForm } from "./validation.js";
 import { showErrors, clearErrors } from "./errors.js";
+import { mockSubmitForm } from "./mockServer.js";
 
 dom.form.addEventListener("submit", async (event) => {
   event.preventDefault(); // we take control now
@@ -20,18 +21,24 @@ dom.form.addEventListener("submit", async (event) => {
   dom.submitButton.disabled = true;
 
   try {
-    const response = await submitForm(formValues);
+    // const response = await submitForm(formValues);
+
+    // mockSubmitForm
+    const response = await mockSubmitForm(formValues);
+
     if (!response.ok) {
-      throw new Error(`Oops! Something went wrong (${response.status})`);
+      // throw new Error(`Oops! Something went wrong (${response.status})`);
 
       // OR
-      // await handleServerError(response)
-      // return;
+      await handleServerError(response)
+      return;
     }
 
-    console.log(response);
+    const data = await response.json();
+    console.log(data.message);
+
   } catch (error) {
-    console.error(error);
+    console.error("Unexpected Error: ", error);
   } finally {
     dom.submitButton.disabled = false;
   }
@@ -70,17 +77,17 @@ function serializeManually() {
 // }
 
 // Handle Server Errors (helper Fn)
-// async function handleServerError(response) {
-//   if (response.status === 422) {
-//     const data = await response.json();
-//     showErrors(data.errors);
-//     return;
-//   }
+async function handleServerError(response) {
+  if (response.status === 422) {
+    const data = await response.json();
+    showErrors(data.errors);
+    return;
+  }
 
-//   if (response.status === 401) {
-//     alert("Unauthorized. Please log in.");
-//     return;
-//   }
+  if (response.status === 401) {
+    alert("Unauthorized access");
+    return;
+  }
 
-//   alert("Something went wrong. Try again later.");
-// }
+  alert("Server error. Please try again later.");
+}

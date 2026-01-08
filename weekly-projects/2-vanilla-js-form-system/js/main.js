@@ -4,6 +4,7 @@ import { dom } from "./dom.js";
 import { validateForm } from "./validation.js";
 import { showErrors, clearErrors } from "./errors.js";
 import { mockSubmitForm } from "./mockServer.js";
+import { showSuccess } from "./success.js";
 
 dom.form.addEventListener("submit", async (event) => {
   event.preventDefault(); // we take control now
@@ -30,13 +31,13 @@ dom.form.addEventListener("submit", async (event) => {
       // throw new Error(`Oops! Something went wrong (${response.status})`);
 
       // OR
-      await handleServerError(response)
+      await handleServerError(response);
       return;
     }
 
     const data = await response.json();
     console.log(data.message);
-
+    showSuccess(data.message);
   } catch (error) {
     console.error("Unexpected Error: ", error);
   } finally {

@@ -15,6 +15,7 @@ export const dom = {
     confirmPassword: document.querySelector("#confirmPassword + .error"),
   },
   submitButton: document.querySelector("button[type='submit'"),
+  successMessage: document.querySelector("#successMessage"),
   errorContainer: null, // reserved for later
 };
 

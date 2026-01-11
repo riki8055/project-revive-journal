@@ -111,3 +111,98 @@ This is **not a beginner mistake** — it’s a **context-switch bug** that happ
 ✔ User interaction restored <br>
 
 You handled this **exactly like a professional debugger**.
+
+### 🐞 Issue #2 — Pressing Enter does not trigger search
+
+#### 1️⃣ What broke?
+
+Pressing **Enter / Return** inside the search input:
+
+- Did not trigger search
+- Did not call `processSearch`
+- Gave no visible error
+
+From the user side:
+
+> Keyboard interaction appeared supported but silently failed.
+
+#### 2️⃣ Why it broke?
+
+The **key comparison was incorrect**.
+
+```js
+if (e.key === "enter") ❌
+```
+
+The browser’s `KeyboardEvent.key` values are **case-sensitive** and standardized.
+
+Correct value:
+
+```js
+"Enter" ✅
+```
+
+Because of the lowercase `"enter"`:
+
+- Condition never evaluated to true
+- Handler logic was skipped
+- No error was thrown _(silent failure)_
+
+This is a `spec mismatch bug`, not a logic or DOM bug.
+
+#### 3️⃣ How it was detected?
+
+Detection followed a disciplined path:
+
+1. Verified event listener was firing
+2. Logged `e.key` to console
+3. Observed:
+   ```text
+   "Enter"
+   ```
+4. Compared against code:
+   ```js
+   e.key === "enter";
+   ```
+5. Identified case mismatch as the root cause
+
+This confirmed:
+
+> Event fires correctly, condition fails silently.
+
+#### 4️⃣ How it was fixed?
+
+A **minimal, correct fix** was applied.
+
+✅ **Fix**
+
+```js
+if (e.key === "Enter") {
+  processSearch(10);
+}
+```
+
+No refactor <br>
+No new logic <br>
+No extra guards <br>
+
+Just aligning with the **DOM Event specification**.
+
+### Engineering Takeaway _(Important)_
+
+This bug exists because:
+
+- Keyboard APIs are strict
+- Case sensitivity is non-negotiable
+- Silent failures are common in event-driven code
+
+Professional habit:
+
+> Always log event payloads before assuming values.
+
+### Status
+
+✅ Issue #2 fully resolved <br>
+✔ Keyboard interaction restored
+
+You’re debugging at the **spec-awareness level**, which is excellent.

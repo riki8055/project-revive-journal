@@ -965,3 +965,395 @@ You have built:
 - Real async HTTP submission
 
 🔥 This is **not beginner territory** anymore.
+
+## Step 7: Server Response Handling _(Mock)_
+
+### Objectives
+
+- Mock realistic server responses
+- Handle **success** and **failure** paths
+- Respect **HTTP status codes**
+- Keep frontend logic identical to real production flow
+
+This ensures:
+
+> When a real backend is plugged in later, **nothing breaks**.
+
+### 1. Why Mocking Is Legit _(Mental Model)_
+
+Mocking is **not cheating**.
+
+Senior engineers mock because:
+
+- Backend may not exist yet
+- Backend may be unstable
+- Frontend logic must be testable independently
+
+We simulate **server truth**, not UI guesses.
+
+### 2. Mock Server Contract _(Define First)_
+
+Our fake server will return:
+
+✅ **Success**
+
+```json
+Status: 200
+{
+  "message": "User registered successfully"
+}
+```
+
+❌ **Validation error**
+
+```json
+Status: 422
+{
+  "errors": {
+    "email": "Email already exists"
+  }
+}
+```
+
+❌ **Auth error**
+
+```json
+Status: 401
+{
+  "message": "Unauthorized"
+}
+```
+
+❌ **Server error**
+
+```json
+Status: 500
+{
+  "message": "Internal Server Error"
+}
+```
+
+This mirrors **real REST APIs**.
+
+### 3. Create Mock Server Module
+
+> commit hash **700b630**
+
+📁 `js/mockServer.js`
+
+```js
+export async function mockSubmitForm(data) {
+  // Simulate network latency
+  await delay(800);
+
+  //   fake server-side validation
+  if (data.email === "taken@example.com") {
+    return mockResponse(422, {
+      errors: {
+        email: "Email already exists",
+      },
+    });
+  }
+
+  if (data.email === "unauthorized@example.com") {
+    return mockResponse(401, {
+      message: "Unauthorized",
+    });
+  }
+
+  if (data.email === "crash@example.com") {
+    return mockResponse(500, {
+      message: "Internal Server Error",
+    });
+  }
+
+  // success
+  return mockResponse(200, {
+    message: "User registered successfully"
+  })
+}
+
+// helpers
+
+function mockResponse(status, body) {
+  return {
+    ok: status >= 200 && status <= 300,
+    status,
+    json: async () => body,
+  };
+}
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+```
+
+📌 This object behaves **exactly like `fetch()` response**.
+
+### 4. Wire Mock Server into Main Flow
+
+> commit hash **3514986**
+
+**Update** `js/main.js`
+
+Replace `submitForm()` usage with mock:
+
+```js
+dom.form.addEventListener("submit", async (event) => {
+  event.preventDefault(); // we take control now
+
+  clearErrors();
+
+  const formValues = serializeManually();
+  const result = validateForm(formValues);
+
+  if (!result.isValid) {
+    showErrors(result.errors);
+    return;
+  }
+
+  dom.submitButton.disabled = true;
+
+  try {
+    // const response = await submitForm(formValues);
+
+    // mockSubmitForm
+    const response = await mockSubmitForm(formValues);
+
+    if (!response.ok) {
+      // throw new Error(`Oops! Something went wrong (${response.status})`);
+
+      // OR
+      await handleServerError(response)
+      return;
+    }
+
+    const data = await response.json();
+    console.log(data.message);
+
+  } catch (error) {
+    console.error("Unexpected Error: ", error);
+  } finally {
+    dom.submitButton.disabled = false;
+  }
+});
+```
+
+### 5. Test Scenarios _(Do These Exactly)_
+
+| Email entered            | Expected behaviour     |
+|--------------------------|------------------------|
+| test@gmail.com           | ✅ Success              |
+| taken@example.com        | ❌ Inline email error   |
+| unauthorized@example.com | ❌ Alert unauthorized   |
+| crash@example.com        | ❌ Generic server error |
+
+This proves:
+- Frontend reacts to server truth
+- Validation ≠ server authority
+- Status codes control UX
+
+### 6. Why This Design Is Strong
+
+✔ Same flow as real backend
+
+✔ Same error-handling logic
+
+✔ No UI assumptions
+
+✔ No fetch-specific coupling
+
+✔ Easy to replace later
+
+To switch to real backend later:
+
+```js
+mockSubmitForm → submitForm
+```
+
+Nothing else changes.
+
+### 7. Core Truths Locked In _(Step 7)_
+
+You’ve built:
+- Browser-native form
+- Controlled DOM layer
+- Validation engine
+- Validation UX
+- Serialization
+- Async submission
+- Server-response-driven UI logic
+
+This is **end-to-end frontend engineering**.
+
+## Step 8: Success State & Reset Flow
+
+### Objectives
+
+After a successful server response, the system must:
+- Clearly confirm success
+- Prevent accidental resubmission
+- Reset form state safely
+- Keep DOM mutations minimal
+- Leave the system ready for next action
+
+Success **UX is not just a message** — it’s a state transition.
+
+### 1. Define the Success UX Rules _(Non-Negotiable)_
+
+Before code, lock these in:
+- Success message must be **visible and unambiguous**
+- Errors must be **fully cleared**
+- Form must be **reset safely**
+- Submit button must not allow **double submit**
+-State change must be **reversible** _(user can submit again)_
+
+### 2. Add a Success Message Container _(HTML)_
+
+> commit hash **b191700**
+
+We add this **once**, statically.
+
+**Update `index.html` _(just above the form)_**
+
+```html
+<p id="successMessage" aria-live="polite" hidden></p>
+```
+
+📌 Why:
+- No dynamic node creation
+- Screen readers announce success
+- Controlled visibility = fewer mutations
+
+### 3. Extend Controlled DOM Layer
+
+> commit hash **8032a83**
+
+**Update** `js/dom.js` _(just below the submitButton)_
+
+```js
+  successMessage: document.querySelector("#successMessage"),
+```
+
+### 4. Create Success UI Module _(Isolated)_
+
+> commit hash **9db07f6**
+
+📁 `js/success.js`
+
+```js
+import { dom } from "./dom.js";
+import { clearErrors } from "./errors.js";
+
+export function showSuccess(message) {
+    clearErrors();
+
+    dom.successMessage.textContent = message;
+    dom.successMessage.hidden = false
+
+    dom.form.reset();
+    dom.submitButton.disabled = true;
+
+    // allow resubmission after a short delay
+    setTimeout(() => {
+        dom.successMessage.hidden = true;
+        dom.submitButton.disabled = false;
+    }, 3000);
+}
+```
+
+📌 Key points:
+- Errors cleared first
+- One text mutation
+- One attribute toggle
+- Reset uses browser-native `form.reset()`
+
+Minimal cost. Maximum clarity.
+
+### 5. Wire Success Flow into Main Logic
+
+> commit hash **29423e8**
+
+**Update** `js/main.js`
+
+Replace success handling section:
+
+```js
+import { showSuccess } from "./success.js";
+```
+
+Inside submit handler _(success path)_:
+
+```js
+const data = await response.json();
+console.log(data.message);
+showSuccess(data.message);
+```
+
+That’s it.
+
+No extra logic. No duplication.
+
+### 6. Test the Full Success Flow
+
+Use this email:
+
+```
+test@example.com
+```
+
+Expected behavior:
+
+✔ Success message appears
+
+✔ Errors disappear
+
+✔ Form clears
+
+✔ Submit disabled briefly
+
+✔ No network retry
+
+✔ UX feels intentional
+
+This is **production-grade success handling**.
+
+### 7. Why This Is the Correct Design
+
+❌ Bad patterns avoided:
+- Alert boxes
+- Reloading page
+- Leaving old errors visible
+- Immediate reset with no feedback
+- Multiple success DOM nodes
+
+✔ Good patterns used:
+- Explicit state transition
+- Accessible messaging
+- Native form reset
+- Minimal DOM mutation
+- Reusable logic
+
+### 8. Core Truths Locked In _(Step 8)_
+
+- Success is a state, not a console log
+- UX must reflect server truth
+- Reset must be intentional
+- DOM mutation should be minimal
+- Forms must be reusable without reload
+
+### Where You Are Now _(Big Picture)_
+
+You’ve built a **complete Vanilla JS Form System**:
+- Native HTML form
+- Controlled DOM access
+- JS validation engine
+- Validation UX
+- Manual & FormData serialization
+- Async submission
+- Server response handling
+- Success state & reset flow
+
+This is **framework-level competence without a framework**.

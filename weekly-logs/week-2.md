@@ -2,6 +2,8 @@
 
 ## What I built
 
+<a href="https://github.com/riki8055/project-revive-journal/tree/main/weekly-projects%2F2-vanilla-js-form-system">Vanilla JS Form System</a>
+
 ## What I learned
 
 - Browser does NOT think in “pages”. It thinks in **resources**.
@@ -44,6 +46,12 @@
 
 ## What confused me
 
+- Nothing
+
 ## What I avoided
 
+- Nothing
+
 ## What I will do next week
+
+Week 3: Git & Engineering Workflow

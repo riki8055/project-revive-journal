@@ -412,3 +412,5 @@ This is one of the **most common real-world UI bugs**.
 ✔ Deterministic rendering achieved
 
 This fix directly demonstrates **render discipline under messy architecture**.
+
+Issue #5 is also included in this commit, where `phonesContainer.textContent = "";` was added to clear previous results and display new search results when hitting `Search`.

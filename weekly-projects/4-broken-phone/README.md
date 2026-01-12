@@ -28,6 +28,8 @@ Example: https://openapi.programming-hero.com/api/phone/apple_iphone_13_pro_max-
 
 ### 🐞Issue #1: Search button not working
 
+> commit hash **cc13f27**
+
 #### 1️⃣ What broke?
 
 The **Search button click action did not work**.
@@ -113,6 +115,8 @@ This is **not a beginner mistake** — it’s a **context-switch bug** that happ
 You handled this **exactly like a professional debugger**.
 
 ### 🐞 Issue #2 — Pressing Enter does not trigger search
+
+> commit hash **208d401**
 
 #### 1️⃣ What broke?
 
@@ -208,6 +212,8 @@ Professional habit:
 You’re debugging at the **spec-awareness level**, which is excellent.
 
 ### 🐞 Issue #3 — Spinner is always running / behaves incorrectly
+
+> commit hash **ef1280f**
 
 #### 1️⃣ What broke?
 

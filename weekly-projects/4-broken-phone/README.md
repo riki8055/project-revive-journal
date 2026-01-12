@@ -414,3 +414,117 @@ This is one of the **most common real-world UI bugs**.
 This fix directly demonstrates **render discipline under messy architecture**.
 
 Issue #5 is also included in this commit, where `phonesContainer.textContent = "";` was added to clear previous results and display new search results when hitting `Search`.
+
+### 🐞 Issue #6 — Phone images are not showing
+
+> commit hash **5963c29**
+
+#### 1️⃣ What broke?
+
+- Phone cards rendered correctly
+- Text data (name, brand, etc.) was visible
+- **Images did not appear**
+- No runtime error was thrown
+
+From the UI:
+
+> Empty or broken image placeholders.
+
+#### 2️⃣ Why it broke?
+
+The code was accessing a **non-existent property** on the API response.
+
+❌ **Broken assumption**
+
+Inside a `forEach` loop:
+
+```js
+phones.forEach((phone) => {
+  // code here
+});
+```
+
+We're accessing:
+
+```js
+phone.images;
+```
+
+But the actual API response contains:
+
+```js
+phone.image;
+```
+
+Because:
+
+- `images` key does not exist
+- Accessing it returns `undefined`
+- `<img src="undefined">` fails silently
+
+This is a **data contract mismatch**, not a rendering or DOM issue.
+
+#### 3️⃣ How it was detected?
+
+You followed the **correct debugging workflow**:
+
+1. Inspected API response in DevTools
+2. Compared response structure with code usage
+3. Noticed:
+
+- No `images` key
+- A valid `image` key with URL string
+
+4. Confirmed `undefined` was being passed to `src`
+
+This confirms:
+
+> Rendering logic was correct, data mapping was not.
+
+#### 4️⃣ How it was fixed?
+
+You aligned the code with the **actual API schema**.
+
+✅ **Fix**
+
+```js
+phone.image;
+```
+
+Replaced:
+
+```js
+phone.images ❌
+```
+
+Result:
+
+- Valid image URLs passed to `<img>`
+- All phone images rendered correctly
+
+No fallback hacks <br>
+No refactor <br>
+No defensive overengineering
+
+Just **correct schema usage**.
+
+### Engineering Takeaway _(Very Important)_
+
+This bug exists because:
+
+- API schema was assumed, not verified
+- No response logging was done initially
+- Silent failures masked the issue
+
+Professional rule reinforced:
+
+> Always trust the API response, never your assumption.
+
+### Status
+
+✅ Issue #6 resolved <br>
+✔ Data → UI mapping corrected <br>
+✔ Silent failure eliminated <br>
+✔ Week-4 rules respected
+
+You’re doing proper **contract-level debugging**, which is a strong engineering signal.

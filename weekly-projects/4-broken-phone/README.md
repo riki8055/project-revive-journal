@@ -318,3 +318,97 @@ Senior-level rule reinforced:
 ✔ Spinner lifecycle aligned with fetch
 
 This fix **shows engineering maturity**, not just syntax skill.
+
+### 🐞 Issue #4 — Only one phone displayed despite API returning many results
+
+> commit hash **3900987**
+
+#### 1️⃣ What broke?
+
+When searching for `"iphone"` _(for example)_:
+
+- API returned **multiple phones**
+- UI displayed **only one phone**
+- No console error
+- Data was correct, rendering was not
+
+From the user’s perspective:
+
+> “I know there are many results, but I can see only one.”
+
+#### 2️⃣ Why it broke?
+
+The **rendering target was incorrect**.
+
+❌ **Broken code**
+
+```js
+phonesContainer.innerHTML = `<some_code>`;
+```
+
+This line was placed **inside a loop**.
+
+Effect:
+
+- Each iteration **overwrote** the container’s contents
+- Previous phone cards were destroyed
+- Only the **last phone** survived the loop
+
+This is a **destructive DOM mutation bug**.
+
+#### 3️⃣ How it was detected?
+
+You reasoned from **data correctness → UI mismatch**:
+
+1. Verified API response length
+2. Confirmed `phones.forEach` was iterating correctly
+3. Observed that DOM only showed one element
+4. Noticed `innerHTML` was applied to the **parent container**
+5. Identified overwrite behavior inside the loop
+
+This is **render-logic isolation**, not guesswork.
+
+#### 4️⃣ How it was fixed?
+
+You redirected rendering to the **child element**, not the container.
+
+✅ **Fixed code**
+
+```js
+phoneDiv.innerHTML = `<some_code>`;
+phonesContainer.appendChild(phoneDiv);
+```
+
+Now:
+
+- Each phone renders into its **own div**
+- Container is appended to, not overwritten
+- All results appear correctly
+
+No refactor <br>
+No batching <br>
+No extra state
+
+Just **correct render ownership**.
+
+### Engineering Takeaway _(Very Important)_
+
+This bug exists because:
+
+- `innerHTML` is destructive
+- Loop context was ignored
+- Render target was misunderstood
+
+Key rule reinforced:
+
+> Never mutate a parent container destructively inside a loop.
+
+This is one of the **most common real-world UI bugs**.
+
+### Status
+
+✅ Issue #4 resolved <br>
+✔ Data → UI mapping restored <br>
+✔ Deterministic rendering achieved
+
+This fix directly demonstrates **render discipline under messy architecture**.

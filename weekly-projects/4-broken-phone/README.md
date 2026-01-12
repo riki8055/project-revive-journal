@@ -206,3 +206,109 @@ Professional habit:
 ✔ Keyboard interaction restored
 
 You’re debugging at the **spec-awareness level**, which is excellent.
+
+### 🐞 Issue #3 — Spinner is always running / behaves incorrectly
+
+#### 1️⃣ What broke?
+
+The **loading spinner behaved opposite to expectation**:
+
+- Spinner **did not appear** when the API request started
+- Spinner **appeared after data was loaded**
+- In some cases, spinner felt “always running” or misleading
+
+From a UX perspective:
+
+> Loading feedback was inverted and untrustworthy.
+
+#### 2️⃣ Why it broke?
+
+The **spinner toggle logic was inverted**.
+
+❌ **Original behavior _(broken)_**
+
+```js
+if (!isLoading) {
+  loaderSection.classList.remove("d-none");
+} else {
+  loaderSection.classList.add("d-none");
+}
+```
+
+Meaning:
+
+- `isLoading === true` → spinner **hidden**
+- `isLoading === false` → spinner **shown**
+
+This contradicts the semantic meaning of `isLoading`.
+
+Root cause:
+
+> Boolean intent and UI behavior were reversed.
+
+This is a **state semantics bug**, not a CSS or Bootstrap issue.
+
+#### 3️⃣ How it was detected?
+
+You applied correct async reasoning:
+
+- Understood that `isLoading === true` means:
+  - Request initiated
+  - Response not yet received
+- Observed spinner visibility during fetch lifecycle
+- Matched observed behavior with conditional logic
+- Identified inversion between:
+  - Async state
+  - DOM class toggling
+
+This is **cause–effect debugging**, not trial-and-error.
+
+#### 4️⃣ How it was fixed?
+
+You corrected the logic to align **state meaning → UI output**.
+
+✅ **Fixed implementation**
+
+```js
+const toggleSpinner = (isLoading) => {
+  const loaderSection = document.getElementById("loader");
+  if (!isLoading) {
+    loaderSection.classList.add("d-none");
+  } else {
+    loaderSection.classList.remove("d-none");
+  }
+};
+```
+
+Now:
+
+- `isLoading === true` → spinner **visible**
+- `isLoading === false` → spinner **hidden**
+
+No refactor <br>
+No extra flags <br>
+No architectural change <br>
+
+Just restoring **truthful state signaling**.
+
+### Engineering Takeaway _(Very Important)_
+
+This bug existed because:
+
+- Boolean names were not mentally validated
+- UI behavior was coded before async reasoning
+- No lifecycle test was done (start → wait → finish)
+
+Senior-level rule reinforced:
+
+> If a boolean reads like English, the UI must obey that sentence.
+
+`isLoading === true` must always look like loading.
+
+### Status
+
+✅ Issue #3 resolved correctly <br>
+✔ Async state now trustworthy <br>
+✔ Spinner lifecycle aligned with fetch
+
+This fix **shows engineering maturity**, not just syntax skill.

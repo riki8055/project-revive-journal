@@ -7,7 +7,7 @@ const loadPhones = async (searchText, dataLimit) => {
 
 const displayPhones = (phones, dataLimit) => {
   const phonesContainer = document.getElementById("phones-container");
-  // phonesContainer.textContent = '';
+  phonesContainer.textContent = "";
   // display 10 phones only
   const showAll = document.getElementById("show-all");
   if (dataLimit && phones.length > 10) {
@@ -24,11 +24,12 @@ const displayPhones = (phones, dataLimit) => {
   } else {
     noPhone.classList.add("d-none");
   }
+
   // display all phones
   phones.forEach((phone) => {
     const phoneDiv = document.createElement("div");
     phoneDiv.classList.add("col");
-    phonesContainer.innerHTML = `
+    phoneDiv.innerHTML = `
         <div class="card p-4">
             <img src="${phone.images}" class="card-img-top" alt="...">
             <div class="card-body">
@@ -69,10 +70,13 @@ document
 
 const toggleSpinner = (isLoading) => {
   const loaderSection = document.getElementById("loader");
+  const phonesContainer = document.getElementById("phones-container");
   if (!isLoading) {
     loaderSection.classList.add("d-none");
+    phonesContainer.classList.remove("d-none");
   } else {
     loaderSection.classList.remove("d-none");
+    phonesContainer.classList.add("d-none");
   }
 };
 
@@ -108,4 +112,4 @@ const displayPhoneDetails = (phone) => {
     `;
 };
 
-loadPhones("apple");
+loadPhones("iphone");

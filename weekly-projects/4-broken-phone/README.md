@@ -522,7 +522,7 @@ Professional rule reinforced:
 
 ### Status
 
-✅ Issue #6 resolved <br>
+✅ **Issue #6 resolved** <br>
 ✔ Data → UI mapping corrected <br>
 ✔ Silent failure eliminated <br>
 ✔ Week-4 rules respected
@@ -620,3 +620,164 @@ Professional lesson:
 ✔ UX state aligned with data state
 
 You’re now handling **logic × UI boundary bugs**, which is a crucial real-world skill.
+
+### 🐞 Issues #8, #9, #10 — Phone details not visible / modal looks empty
+
+> commit hash **56b5108**
+
+_(Handled together because they block the same user flow)_
+
+#### 1️⃣ What broke?
+
+**Issue #8**
+
+- Clicking **“Load phone details”** showed **nothing meaningful**
+- API call happened, but UI looked empty
+
+**Issue #9**
+
+- Modal technically opened
+- But **text was invisible**, giving the impression that nothing loaded
+
+**Issue #10**
+
+- **Storage information** did not appear in the modal
+
+**Additionally:**
+
+- Some detail API calls failed due to **incorrect URL formatting**
+
+From the user’s perspective:
+
+> “I clicked details, something opened, but I can’t see anything useful.”
+
+#### 2️⃣ Why it broke?
+
+🔹**URL issue**
+
+- Detail API URL was incorrectly formed
+- `www.` was prepended
+- API expects URLs starting with:
+
+  ```arduino
+  https://openapi.programming-hero.com/...
+  ```
+
+- **Result:** request failure or inconsistent responses
+
+🔹 **Issue #8 & #9 — CSS masking data**
+
+Modal container had:
+
+```html
+class="text-white"
+```
+
+Modal background is also light
+
+**Result:**
+
+- Text rendered correctly
+- But **color matched background**
+- Looked like “no data loaded”
+
+This is a **visual failure**, not a logic failure.
+
+🔹 **Issue #10 — Wrong data access path**
+
+- Code accessed:
+
+  ```js
+  phone.mainFeatures;
+  ```
+
+- Actual data structure:
+  ```js
+  phone.mainFeatures.storage;
+  ```
+
+Because of this:
+
+- Storage value resolved to `undefined` or `[Object.object]`
+- UI rendered empty content
+
+This is a **nested data contract bug**.
+
+#### 3️⃣ How it was detected?
+
+ou followed a proper layered debugging approach:
+
+1. Verified click handler fires
+2. Checked Network tab → API responds
+3. Logged API response object
+4. Compared UI output vs actual data
+5. Inspected modal DOM → text exists but invisible
+6. Inspected `mainFeatures` structure in DevTools
+
+This clearly showed:
+
+> Data exists, but either **can’t be seen** or **is accessed incorrectly**.
+
+#### 4️⃣ How it was fixed?
+
+✅ **URL fix**
+
+- Corrected API URL to use:
+  ```text
+  https://openapi.programming-hero.com/...
+  ```
+- Removed invalid `www.` prefix
+
+✅ **Issue #8 & #9 fix _(Modal visibility)_**
+
+- Removed:
+  ```html
+  text-white
+  ```
+- Restored proper contrast between text and background
+- Modal content immediately became visible
+
+✅ **Issue #10 fix _(Storage field)_**
+
+- Corrected property access:
+  ```js
+  phone.mainFeatures.storage;
+  ```
+- Storage details now render correctly
+
+No refactor <br>
+No redesign <br>
+No extra logic
+
+Just **aligning code with reality**.
+
+### Engineering Takeaway _(Very Important)_
+
+These bugs existed because:
+
+- UI visibility was mistaken for logic failure
+- API schema was partially assumed
+- CSS silently sabotaged correct data
+
+Key professional lesson:
+
+> If data exists but UI looks empty, always check CSS and data paths before logic.
+
+Many engineers waste hours debugging JS for what is actually a **presentation-layer bug**.
+
+Status
+
+✅ **Issue #8 resolved — details load correctly** <br>
+✅ **Issue #9 resolved — modal content visible** <br>
+✅ **Issue #10 resolved — storage data displayed** <br>
+✔ API contract corrected <br>
+✔ UX trust restored
+
+## 🔒 Week-4 Outcome
+
+You:
+
+- Did **not** rewrite the app
+- Diagnosed bugs like a **maintenance engineer**
+
+That’s exactly the goal of this project.

@@ -33,4 +33,4 @@
 
 ## What I will do next week
 
-Week 1-2 (Month 2): Modular JS & Simple Architecture
+Week 5-6 (Month 2): Modular JS & Simple Architecture

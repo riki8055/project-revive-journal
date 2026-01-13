@@ -18,7 +18,7 @@
     </header>
     <main class="container">
       <section class="d-flex justify-content-center align-items-center mb-5">
-        <form class="d-flex justify-content-center align-items-center">
+        <form class="d-flex justify-content-center align-items-start">
           <div class="me-2">
             <input
               id="search-field"
@@ -26,7 +26,11 @@
               class="form-control"
               id="exampleFormControlInput1"
               placeholder="search your phone"
+              name="search"
             />
+            <div class="error text-danger" aria-live="polite">
+              Please enter a brand name
+            </div>
           </div>
           <button id="btn-search" class="btn btn-primary px-3">Search</button>
         </form>
@@ -43,7 +47,7 @@
         </div>
       </section>
       <!-- display Search Result -->
-      <section class="mb-5">
+      <section class="mb-5" id="display-search-section">
         <div id="initial-message">
           <p class="lead text-center">
             Give it a try—you can start by searching for a brand name.
@@ -70,7 +74,7 @@
           </div>
         </div>
         <div
-          id="errors"
+          id="search-errors"
           class="d-none justify-content-center align-items-center"
         >
           <div class="alert alert-warning m-0 w-50" role="alert">

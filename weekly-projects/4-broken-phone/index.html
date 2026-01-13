@@ -13,21 +13,23 @@
   </head>
 
   <body>
-    <header>
-      <h1>Welcome to my Phone Hunter!</h1>
+    <header class="my-5">
+      <h1 class="text-center">Welcome to my Phone Hunter!</h1>
     </header>
     <main class="container">
-      <section>
-        <div class="mb-3 w-50">
-          <input
-            id="search-field"
-            type="email"
-            class="form-control"
-            id="exampleFormControlInput1"
-            placeholder="search your phone"
-          />
-          <div id="btn-search" class="btn btn-primary">Search</div>
-        </div>
+      <section class="d-flex justify-content-center align-items-center mb-5">
+        <form class="d-flex justify-content-center align-items-center">
+          <div class="me-2">
+            <input
+              id="search-field"
+              type="email"
+              class="form-control"
+              id="exampleFormControlInput1"
+              placeholder="search your phone"
+            />
+          </div>
+          <button id="btn-search" class="btn btn-primary px-3">Search</button>
+        </form>
       </section>
       <!-- loader -->
       <section id="loader" class="d-none">
@@ -41,13 +43,193 @@
         </div>
       </section>
       <!-- display Search Result -->
-      <section>
+      <section class="border border-2">
+        <div id="phones-container" class="row row-cols-1 row-cols-md-3 g-4">
+          <div class="card p-4">
+            <img
+              src="./assets/dummy_iphone.webp"
+              class="card-img-top"
+              alt="..."
+            />
+            <div class="card-body">
+              <h5 class="card-title">Apple iPhone 13</h5>
+              <p class="card-text">
+                With a bright and stellar display, power-packed performance,
+                fantastic camera system and longer battery life – the Apple
+                iPhone 13 is the most amazing flagship smartphone on a budget.
+              </p>
+              <button
+                onclick="loadPhoneDetails('${phone.slug}')"
+                href="#"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#phoneDetailModal"
+              >
+                Show Details
+              </button>
+            </div>
+          </div>
+          <div class="card p-4">
+            <img
+              src="./assets/dummy_iphone.webp"
+              class="card-img-top"
+              alt="..."
+            />
+            <div class="card-body">
+              <h5 class="card-title">Apple iPhone 13</h5>
+              <p class="card-text">
+                With a bright and stellar display, power-packed performance,
+                fantastic camera system and longer battery life – the Apple
+                iPhone 13 is the most amazing flagship smartphone on a budget.
+              </p>
+              <button
+                onclick="loadPhoneDetails('${phone.slug}')"
+                href="#"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#phoneDetailModal"
+              >
+                Show Details
+              </button>
+            </div>
+          </div>
+          <div class="card p-4">
+            <img
+              src="./assets/dummy_iphone.webp"
+              class="card-img-top"
+              alt="..."
+            />
+            <div class="card-body">
+              <h5 class="card-title">Apple iPhone 13</h5>
+              <p class="card-text">
+                With a bright and stellar display, power-packed performance,
+                fantastic camera system and longer battery life – the Apple
+                iPhone 13 is the most amazing flagship smartphone on a budget.
+              </p>
+              <button
+                onclick="loadPhoneDetails('${phone.slug}')"
+                href="#"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#phoneDetailModal"
+              >
+                Show Details
+              </button>
+            </div>
+          </div>
+          <div class="card p-4">
+            <img
+              src="./assets/dummy_iphone.webp"
+              class="card-img-top"
+              alt="..."
+            />
+            <div class="card-body">
+              <h5 class="card-title">Apple iPhone 13</h5>
+              <p class="card-text">
+                With a bright and stellar display, power-packed performance,
+                fantastic camera system and longer battery life – the Apple
+                iPhone 13 is the most amazing flagship smartphone on a budget.
+              </p>
+              <button
+                onclick="loadPhoneDetails('${phone.slug}')"
+                href="#"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#phoneDetailModal"
+              >
+                Show Details
+              </button>
+            </div>
+          </div>
+          <div class="card p-4">
+            <img
+              src="./assets/dummy_iphone.webp"
+              class="card-img-top"
+              alt="..."
+            />
+            <div class="card-body">
+              <h5 class="card-title">Apple iPhone 13</h5>
+              <p class="card-text">
+                With a bright and stellar display, power-packed performance,
+                fantastic camera system and longer battery life – the Apple
+                iPhone 13 is the most amazing flagship smartphone on a budget.
+              </p>
+              <button
+                onclick="loadPhoneDetails('${phone.slug}')"
+                href="#"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#phoneDetailModal"
+              >
+                Show Details
+              </button>
+            </div>
+          </div>
+          <div class="card p-4">
+            <img
+              src="./assets/dummy_iphone.webp"
+              class="card-img-top"
+              alt="..."
+            />
+            <div class="card-body">
+              <h5 class="card-title">Apple iPhone 13</h5>
+              <p class="card-text">
+                With a bright and stellar display, power-packed performance,
+                fantastic camera system and longer battery life – the Apple
+                iPhone 13 is the most amazing flagship smartphone on a budget.
+              </p>
+              <button
+                onclick="loadPhoneDetails('${phone.slug}')"
+                href="#"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#phoneDetailModal"
+              >
+                Show Details
+              </button>
+            </div>
+          </div>
+          <div class="card p-4">
+            <img
+              src="./assets/dummy_iphone.webp"
+              class="card-img-top"
+              alt="..."
+            />
+            <div class="card-body">
+              <h5 class="card-title">Apple iPhone 13</h5>
+              <p class="card-text">
+                With a bright and stellar display, power-packed performance,
+                fantastic camera system and longer battery life – the Apple
+                iPhone 13 is the most amazing flagship smartphone on a budget.
+              </p>
+              <button
+                onclick="loadPhoneDetails('${phone.slug}')"
+                href="#"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#phoneDetailModal"
+              >
+                Show Details
+              </button>
+            </div>
+          </div>
+        </div>
         <div
-          id="phones-container"
-          class="row row-cols-1 row-cols-md-3 g-4"
-        ></div>
-        <div id="no-found-message" class="mt-4 d-none">
-          <h3 class="text-warning">No Phone Found. Please try a new search</h3>
+          id="no-found-message"
+          class="d-none justify-content-center align-items-center"
+        >
+          <div class="alert alert-warning m-0 w-50" role="alert">
+            <h4 class="alert-heading">We Couldn’t Find That Phone</h4>
+            <p>
+              We couldn’t find any phones that match your search right now, but
+              adjusting keywords or trying again may help.
+            </p>
+            <hr />
+            <p class="mb-0">
+              Please check the spelling or search online to confirm the correct
+              phone name, then try again.
+            </p>
+          </div>
         </div>
         <div id="show-all" class="text-center d-none">
           <div id="btn-show-all" class="btn btn-primary">Show All</div>
@@ -95,6 +277,6 @@
       integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa"
       crossorigin="anonymous"
     ></script>
-    <script src="js/app.js"></script>
+    <!-- <script src="js/app.js"></script> -->
   </body>
 </html>

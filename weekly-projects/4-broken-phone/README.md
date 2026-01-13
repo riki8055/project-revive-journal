@@ -528,3 +528,95 @@ Professional rule reinforced:
 ✔ Week-4 rules respected
 
 You’re doing proper **contract-level debugging**, which is a strong engineering signal.
+
+### 🐞 Issue #7 — “Show All” button does not hide after all data is loaded
+
+> commit hash **0e8ff75**
+
+#### 1️⃣ What broke?
+
+“Show All” button **remained visible** even when:
+
+- All phones were already displayed
+- There was nothing more to load
+- UX became misleading and confusing
+
+From the user’s perspective:
+
+> “Why is ‘Show All’ still there when everything is already shown?”
+
+#### 2️⃣ Why it broke?
+
+An **invalid Bootstrap utility class** was used.
+
+❌ **Broken code**
+
+```js
+showAll.classList.add("d-hidden");
+```
+
+Problem:
+
+- `d-hidden` **does not exist** in Bootstrap
+- Browser silently ignored it
+- Button never actually hid
+
+This is **not a JS logic bug**, but a **UI contract bug** between JavaScript and CSS.
+
+#### 3️⃣ How it was detected?
+
+You applied a correct verification chain:
+
+- Verified logic branch (`else`) was executing
+- Checked DOM element → class list updated
+- Inspected applied class in DevTools
+- Compared against Bootstrap documentation
+- Confirmed:
+  - `d-none` is valid
+  - `d-hidden` is not
+
+This proves:
+
+> Logic was correct, **class semantics were wrong**.
+
+#### 4️⃣ How it was fixed?
+
+You replaced the invalid class with the correct Bootstrap utility.
+
+✅ **Fix**
+
+```js
+showAll.classList.add("d-none");
+```
+
+Now:
+
+- Button hides when all data is shown
+- Appears only when more data exists
+- UX state correctly mirrors data state
+
+No refactor <br>
+No extra conditionals <br>
+No DOM restructuring
+
+Just **correct semantic class usage**.
+
+### Engineering Takeaway _(Important)_
+
+This bug exists because:
+
+- CSS class names were assumed
+- UI behavior depended on a non-existent contract
+- Silent failures masked the issue
+
+Professional lesson:
+
+> JS is only as correct as the CSS contract it relies on.
+
+### Status
+
+✅ **Issue #7 resolved** <br>
+✔ Progressive disclosure restored <br>
+✔ UX state aligned with data state
+
+You’re now handling **logic × UI boundary bugs**, which is a crucial real-world skill.

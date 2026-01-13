@@ -3,7 +3,7 @@
 ## What I built
 
 - No build, just maintenance 
-<a href="https://github.com/riki8055/project-revive-journal/tree/main/weekly-projects%2F4-broken-phone">Broken Phones Web App</a>
+- <a href="https://github.com/riki8055/project-revive-journal/tree/main/weekly-projects%2F4-broken-phone">Broken Phones Web App</a>
 
 ## What I learned
 

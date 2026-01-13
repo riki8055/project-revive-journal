@@ -43,179 +43,34 @@
         </div>
       </section>
       <!-- display Search Result -->
-      <section class="border border-2">
-        <div id="phones-container" class="row row-cols-1 row-cols-md-3 g-4">
-          <div class="card p-4">
+      <section class="mb-5">
+        <div id="initial-message">
+          <p class="lead text-center">
+            Give it a try—you can start by searching for a brand name.
+          </p>
+        </div>
+        <div
+          id="phones-container"
+          class="row row-cols-1 row-cols-md-3 g-4 mb-5 d-none"
+        >
+          <div class="card">
             <img
               src="./assets/dummy_iphone.webp"
               class="card-img-top"
               alt="..."
             />
             <div class="card-body">
-              <h5 class="card-title">Apple iPhone 13</h5>
+              <h5 class="card-title">Card title</h5>
               <p class="card-text">
-                With a bright and stellar display, power-packed performance,
-                fantastic camera system and longer battery life – the Apple
-                iPhone 13 is the most amazing flagship smartphone on a budget.
+                Some quick example text to build on the card title and make up
+                the bulk of the card’s content.
               </p>
-              <button
-                onclick="loadPhoneDetails('${phone.slug}')"
-                href="#"
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#phoneDetailModal"
-              >
-                Show Details
-              </button>
-            </div>
-          </div>
-          <div class="card p-4">
-            <img
-              src="./assets/dummy_iphone.webp"
-              class="card-img-top"
-              alt="..."
-            />
-            <div class="card-body">
-              <h5 class="card-title">Apple iPhone 13</h5>
-              <p class="card-text">
-                With a bright and stellar display, power-packed performance,
-                fantastic camera system and longer battery life – the Apple
-                iPhone 13 is the most amazing flagship smartphone on a budget.
-              </p>
-              <button
-                onclick="loadPhoneDetails('${phone.slug}')"
-                href="#"
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#phoneDetailModal"
-              >
-                Show Details
-              </button>
-            </div>
-          </div>
-          <div class="card p-4">
-            <img
-              src="./assets/dummy_iphone.webp"
-              class="card-img-top"
-              alt="..."
-            />
-            <div class="card-body">
-              <h5 class="card-title">Apple iPhone 13</h5>
-              <p class="card-text">
-                With a bright and stellar display, power-packed performance,
-                fantastic camera system and longer battery life – the Apple
-                iPhone 13 is the most amazing flagship smartphone on a budget.
-              </p>
-              <button
-                onclick="loadPhoneDetails('${phone.slug}')"
-                href="#"
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#phoneDetailModal"
-              >
-                Show Details
-              </button>
-            </div>
-          </div>
-          <div class="card p-4">
-            <img
-              src="./assets/dummy_iphone.webp"
-              class="card-img-top"
-              alt="..."
-            />
-            <div class="card-body">
-              <h5 class="card-title">Apple iPhone 13</h5>
-              <p class="card-text">
-                With a bright and stellar display, power-packed performance,
-                fantastic camera system and longer battery life – the Apple
-                iPhone 13 is the most amazing flagship smartphone on a budget.
-              </p>
-              <button
-                onclick="loadPhoneDetails('${phone.slug}')"
-                href="#"
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#phoneDetailModal"
-              >
-                Show Details
-              </button>
-            </div>
-          </div>
-          <div class="card p-4">
-            <img
-              src="./assets/dummy_iphone.webp"
-              class="card-img-top"
-              alt="..."
-            />
-            <div class="card-body">
-              <h5 class="card-title">Apple iPhone 13</h5>
-              <p class="card-text">
-                With a bright and stellar display, power-packed performance,
-                fantastic camera system and longer battery life – the Apple
-                iPhone 13 is the most amazing flagship smartphone on a budget.
-              </p>
-              <button
-                onclick="loadPhoneDetails('${phone.slug}')"
-                href="#"
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#phoneDetailModal"
-              >
-                Show Details
-              </button>
-            </div>
-          </div>
-          <div class="card p-4">
-            <img
-              src="./assets/dummy_iphone.webp"
-              class="card-img-top"
-              alt="..."
-            />
-            <div class="card-body">
-              <h5 class="card-title">Apple iPhone 13</h5>
-              <p class="card-text">
-                With a bright and stellar display, power-packed performance,
-                fantastic camera system and longer battery life – the Apple
-                iPhone 13 is the most amazing flagship smartphone on a budget.
-              </p>
-              <button
-                onclick="loadPhoneDetails('${phone.slug}')"
-                href="#"
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#phoneDetailModal"
-              >
-                Show Details
-              </button>
-            </div>
-          </div>
-          <div class="card p-4">
-            <img
-              src="./assets/dummy_iphone.webp"
-              class="card-img-top"
-              alt="..."
-            />
-            <div class="card-body">
-              <h5 class="card-title">Apple iPhone 13</h5>
-              <p class="card-text">
-                With a bright and stellar display, power-packed performance,
-                fantastic camera system and longer battery life – the Apple
-                iPhone 13 is the most amazing flagship smartphone on a budget.
-              </p>
-              <button
-                onclick="loadPhoneDetails('${phone.slug}')"
-                href="#"
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#phoneDetailModal"
-              >
-                Show Details
-              </button>
+              <a href="#" class="btn btn-primary">View Details</a>
             </div>
           </div>
         </div>
         <div
-          id="no-found-message"
+          id="errors"
           class="d-none justify-content-center align-items-center"
         >
           <div class="alert alert-warning m-0 w-50" role="alert">
@@ -232,7 +87,7 @@
           </div>
         </div>
         <div id="show-all" class="text-center d-none">
-          <div id="btn-show-all" class="btn btn-primary">Show All</div>
+          <div id="btn-show-all" class="btn btn-primary px-3">Load More</div>
         </div>
       </section>
 

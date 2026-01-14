@@ -15,6 +15,8 @@ dom.form.addEventListener("submit", async (e) => {
   }
 
   const data = await fetchPhones(searchValue);
+
+  console.log(data.isValid);
 });
 
 function clearFormError() {

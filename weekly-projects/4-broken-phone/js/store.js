@@ -26,9 +26,15 @@ export const fetchPhones = async (searchValue) => {
       throw error;
     }
 
-    return data;
+    return {
+      isValid: true,
+      data,
+    };
   } catch (error) {
-    console.log(error.title);
+    return {
+      isValid: false,
+      error,
+    };
   }
 };
 

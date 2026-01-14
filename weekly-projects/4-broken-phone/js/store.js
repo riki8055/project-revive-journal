@@ -5,6 +5,7 @@ export const fetchPhones = async (searchValue) => {
     const response = await fetch(url);
     if (!response.ok) {
       const error = new Error();
+      error.type = "danger";
       error.title = "Something's not right...";
       error.message =
         "We are trying our best to resolve the issue at earliest.";
@@ -17,6 +18,7 @@ export const fetchPhones = async (searchValue) => {
 
     if (!data.status) {
       const error = new Error();
+      error.type = "warning";
       error.title = "We Couldn’t Find That Phone";
       error.message =
         "We couldn’t find any phones that match your search right now, but adjusting keywords or trying again may help.";

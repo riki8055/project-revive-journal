@@ -1,6 +1,7 @@
 import { dom } from "./dom.js";
+import { fetchPhones } from "./store.js";
 
-dom.form.addEventListener("submit", (e) => {
+dom.form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   clearFormError();
@@ -13,7 +14,7 @@ dom.form.addEventListener("submit", (e) => {
     return;
   }
 
-  console.log(searchValue);
+  const data = await fetchPhones(searchValue);
 });
 
 function clearFormError() {

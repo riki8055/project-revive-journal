@@ -22,15 +22,12 @@
           <div class="me-2">
             <input
               id="search-field"
-              type="email"
               class="form-control"
               id="exampleFormControlInput1"
               placeholder="search your phone"
               name="search"
             />
-            <div class="error text-danger" aria-live="polite">
-              Please enter a brand name
-            </div>
+            <div class="error text-danger" aria-live="polite"></div>
           </div>
           <button id="btn-search" class="btn btn-primary px-3">Search</button>
         </form>
@@ -47,7 +44,7 @@
         </div>
       </section>
       <!-- display Search Result -->
-      <section class="mb-5" id="display-search-section">
+      <section class="mb-5" id="display-search-results">
         <div id="initial-message">
           <p class="lead text-center">
             Give it a try—you can start by searching for a brand name.
@@ -79,19 +76,19 @@
         >
           <div class="alert alert-warning m-0 w-50" role="alert">
             <h4 class="alert-heading">We Couldn’t Find That Phone</h4>
-            <p>
+            <p class="alert-text">
               We couldn’t find any phones that match your search right now, but
               adjusting keywords or trying again may help.
             </p>
             <hr />
-            <p class="mb-0">
+            <p class="mb-0 alert-helper-text">
               Please check the spelling or search online to confirm the correct
               phone name, then try again.
             </p>
           </div>
         </div>
-        <div id="show-all" class="text-center d-none">
-          <div id="btn-show-all" class="btn btn-primary px-3">Load More</div>
+        <div id="load-more" class="text-center d-none">
+          <div id="btn-load-more" class="btn btn-primary px-3">Load More</div>
         </div>
       </section>
 
@@ -137,5 +134,7 @@
       crossorigin="anonymous"
     ></script>
     <!-- <script src="js/app.js"></script> -->
+
+    <script type="module" src="./js/main.js"></script>
   </body>
 </html>

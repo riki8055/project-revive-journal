@@ -1,4 +1,5 @@
 import { dom } from "./dom.js";
+import { displayPhones } from "./displayPhones.js";
 
 export function manageFeedbacks(data) {
   dom.sections.loader.classList.add("d-none");

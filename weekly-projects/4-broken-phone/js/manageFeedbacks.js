@@ -6,6 +6,7 @@ export function manageFeedbacks(data) {
   dom.sections.displaySearch.classList.remove("d-none");
 
   if (!data.isValid) {
+    clearSuccessFeedback();
     dom.searchErrors.classList.remove("d-none");
     dom.searchErrors.classList.add("d-flex");
     dom.displays.phonesContainer.classList.add("d-none");
@@ -40,4 +41,9 @@ export function manageFeedbacks(data) {
 
     displayPhones(data);
   }
+}
+
+function clearSuccessFeedback() {
+  dom.sections.displaySearch.childNodes[0].classList.add("d-none");
+  dom.sections.displaySearch.childNodes[0].innerHTML = "";
 }

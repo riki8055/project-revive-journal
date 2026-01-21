@@ -9,8 +9,8 @@
 **Problem statement _(strict)_:**
 
 > A user can create, view, and delete notes. <br>
-Notes must survive frontend refresh. <br>
-System must tolerate bad inputs and unreliable network.
+> Notes must survive frontend refresh. <br>
+> System must tolerate bad inputs and unreliable network.
 
 No UI fantasy. No styling talk. Only behavior.
 
@@ -79,7 +79,7 @@ This avoids sync hell later.
 We define **what exists**, not how it’s coded.
 
 | Method | Route      | Purpose                 |
-|--------|------------|-------------------------|
+| ------ | ---------- | ----------------------- |
 | GET    | /notes     | Fetch all notes         |
 | POST   | /notes     | Create a new note       |
 | PUT    | /notes/:id | Update an existing note |
@@ -150,7 +150,7 @@ Backend guarantees:
 ### Failure Scenarios _(Defined, not coded yet)_
 
 | Case                  | Response                  |
-|-----------------------|---------------------------|
+| --------------------- | ------------------------- |
 | Invalid JSON          | 400 Bad Request           |
 | Missing title/content | 422 Unprocessable Entity  |
 | Note not found        | 404 Not Found             |
@@ -270,3 +270,264 @@ Most developers skip this day.
 That’s why their apps become unmaintainable.
 
 You’re doing what **senior engineers do instinctively**.
+
+# Day 2 — Backend Skeleton
+
+**Node.js · No frameworks · Reality-first**
+
+## Objectives
+
+> Build a minimal, observable HTTP server that you fully understand end-to-end.
+
+## 0️⃣ Ground Rules _(Read Before Coding)_
+
+❌ No Express / Fastify / frameworks <br>
+❌ No database <br>
+❌ No business logic yet <br>
+✅ Raw http module <br>
+✅ Manual routing <br>
+✅ Manual logging <br>
+✅ Explicit control over request & response
+
+If something feels “verbose”, that’s the **point**.
+
+## 1️⃣ What We Are Building Today _(Scope Lock)_
+
+By end of Day 2, backend will have:
+
+- A running HTTP server
+- One real route: `GET /health`
+- One placeholder route: `GET /notes` → returns `[]`
+- A **manual logger**
+- Clean separation:
+  - HTTP layer
+  - Routing
+  - Logging
+
+Nothing else
+
+## 2️⃣ Mental Model: What Happens on Every Request
+
+Before code, internalize this:
+
+```pgsql
+Client
+  ↓
+TCP connection
+  ↓
+Node http server
+  ↓
+Request object (req)
+  ↓
+Your routing logic
+  ↓
+Response object (res)
+  ↓
+Serialized HTTP response
+```
+
+Node does **not**:
+
+- Parse JSON automatically
+- Route automatically
+- Log automatically
+
+You do everything.
+
+## 3️⃣ Folder Structure _(Minimal but Intentional)_
+
+> commit hash **3a09b94**
+
+Create this **exact structure**:
+
+```pgsql
+backend/
+  ├── server.js
+  ├── router.js
+  └── logger.js
+```
+
+Each file has **one responsibility**.
+
+## 4️⃣ logger.js — Observability Starts Here
+
+> commit hash **287b26a**
+
+> Logging is not debugging. <br>
+> Logging is **system memory**.
+
+```js
+// logger.js
+
+function log({ method, url, status, duration }) {
+  const time = new Date().toISOString();
+
+  console.log(`[${time}] ${method} ${url} ${status} ${duration}ms`);
+}
+
+module.exports = { log };
+```
+
+Why this shape?
+
+- Structured
+- Extendable
+- No business coupling
+
+## 5️⃣ router.js — Manual Routing _(No Magic)_
+
+> commit hash **87d846b**
+
+> Routing is **just decision making**.
+
+```js
+// router.js
+
+function router(req, res) {
+  const { method, url } = req;
+
+  if (method === "GET" && url === "/health") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok" }));
+    return;
+  }
+
+  if (method === "GET" && url === "/notes") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify([]));
+    return;
+  }
+
+  // fallback
+  res.writeHead(404, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ error: "Not Found" }));
+}
+
+module.exports = { router };
+```
+
+Important:
+
+- `return` after response → **critical**
+- Explicit headers → no guessing
+- No try/catch yet (we want it to break loudly)
+
+## 6️⃣ server.js — The HTTP Boundary
+
+> commit hash **96f1b70**
+
+This file **touches the network**. <br>
+Everything else must stay pure.
+
+```js
+// server.js
+
+const http = require("http");
+const { router } = require("./router");
+const { log } = require("./logger");
+
+const PORT = 3000;
+
+const server = http.createServer((req, res) => {
+  const start = Date.now();
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+
+    log({
+      method: req.method,
+      url: req.url,
+      status: res.statusCode,
+      duration,
+    });
+  });
+
+  router(req, res);
+});
+
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
+```
+
+Key ideas here:
+
+- `res.on('finish')` → **true response lifecycle**
+- Logging happens after response is sent
+- Server knows nothing about routes
+
+This is **clean separation**.
+
+## 7️⃣ Test Like an Engineer _(Not a Coder)_
+
+Use browser or curl.
+
+### Health check
+
+```bash
+GET http://localhost:3000/health
+```
+
+Response:
+
+```json
+{ "status": "ok" }
+```
+
+Log:
+
+```bash
+[2026-01-19T15:12:01.234Z] GET /health 200 1ms
+```
+
+### Notes
+
+```bash
+GET http://localhost:3000/notes
+```
+
+Response:
+
+```json
+[]
+```
+
+### Invalid route
+
+```bash
+GET /random
+```
+
+response:
+
+```json
+{ "error": "Not Found" }
+```
+
+## 8️⃣ What You Must _Feel_ After Day 2
+
+If Day 2 worked correctly, you should now:
+
+- Understand **how Express works internally**
+- Know where latency is measured
+- Know who controls headers & status codes
+- Realize how much magic frameworks hide
+
+If you don’t feel this yet → reread and retype manually.
+
+## 9️⃣ Common Mistakes _(Avoid These)_
+
+❌ Putting logic in `server.js` <br>
+❌ Logging before response finishes <br>
+❌ Forgetting `return` after `res.end()` <br>
+❌ Assuming JSON parsing exists <br>
+❌ Adding POST logic today (too early)
+
+## 1️⃣0️⃣ Day 2 Exit Criteria _(Hard Check_)
+
+You are allowed to proceed only if:
+
+- You can explain every line in `server.js`
+- You know why `res.on('finish')` is used
+- You can add a new route **without copying blindly**
+- Logs make sense without reading code

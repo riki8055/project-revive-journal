@@ -1,6 +1,8 @@
 const store = require("../store/notes.store");
 
 function createNote({ title, content }) {
+  const start = Date.now();
+
   const note = {
     id: `n_${Date.now()}`,
     title,
@@ -8,7 +10,11 @@ function createNote({ title, content }) {
     createdAt: Date.now(),
   };
 
-  return store.add(note);
+  const result = store.add(note);
+
+  console.log(`[SERVICE] createNote executed in ${Date.now() - start}ms`);
+
+  return result;
 }
 
 function getNotes() {

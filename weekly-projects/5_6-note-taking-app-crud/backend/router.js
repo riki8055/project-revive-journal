@@ -30,6 +30,8 @@ function router(req, res) {
       res.writeHead(201, { "Content-Type": "application/json" });
       res.end(JSON.stringify(note));
     });
+
+    return;
   }
 
   // fallback

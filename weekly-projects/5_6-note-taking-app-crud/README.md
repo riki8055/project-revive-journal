@@ -531,3 +531,329 @@ You are allowed to proceed only if:
 - You know why `res.on('finish')` is used
 - You can add a new route **without copying blindly**
 - Logs make sense without reading code
+
+# Day 3 — Backend Data Layer _(Services & Separation of Concerns)_
+
+**Services · Separation of Concerns · Controlled State**
+
+## Objectives
+
+> Move all note-related logic out of routing and into a dedicated service layer, while keeping HTTP handling dumb.
+
+## 0️⃣ Architectural Rule of the Day
+
+> **Routes translate HTTP → intent** <br>
+> **Services execute business logic** <br>
+> **Server knows nothing about notes**
+
+If a route _decides_ anything → it’s doing too much.
+
+## 1️⃣ What Changes Today _(Scope Lock)_
+
+By end of Day 3, backend will have:
+
+- A **notes service** responsible for:
+
+  - Creating notes
+  - Reading notes
+
+- In-memory storage _(array)_
+
+- Routes that:
+
+  - Delegate logic
+  - Handle HTTP concerns only
+
+- Logs that show:
+  - When service logic runs
+  - How long it takes
+
+❌ No persistence <br>
+❌ No POST body parsing errors handling yet _(comes Day 6)_
+
+## 2️⃣ Folder Structure _(Evolved, Still Minimal)_
+
+> commit hash **db625b0**
+
+Update backend structure to:
+
+```markdown
+backend/
+├── server.js
+├── router.js
+├── logger.js
+├── services/
+│ └── notes.service.js
+└── store/
+└── notes.store.js
+```
+
+This is **separation by responsibility**, not by type.
+
+## 3️⃣ notes.store.js — Controlled State
+
+> commit hash **ee9fc04**
+
+State should be boring and predictable.
+
+```js
+// store/notes.store.js
+
+const notes = [];
+
+function getAll() {
+  return notes;
+}
+
+function add(note) {
+  notes.push(note);
+  return note;
+}
+
+module.exports = {
+  getAll,
+  add,
+};
+```
+
+Rules:
+
+- No IDs generated here
+- No timestamps here
+- No HTTP here
+
+Store only stores.
+
+## 4️⃣ notes.service.js — Business Logic Lives Here
+
+> commit hash **95f1b65**
+
+This is the **brain** of the backend.
+
+```js
+// services/notes.service.js
+
+const store = require("../store/notes.store");
+
+function createNote({ title, content }) {
+  const note = {
+    id: `n_${Date.now()}`,
+    title,
+    content,
+    createdAt: Date.now(),
+  };
+
+  return store.add(note);
+}
+
+function getNotes() {
+  return store.getAll();
+}
+
+module.exports = {
+  createNote,
+  getNotes,
+};
+```
+
+Why here?
+
+- ID generation = business decision
+- Timestamp = business decision
+- Data shape = business decision
+
+## 5️⃣ router.js — Routes Become Thin
+
+> commit hash **64a86d3**
+
+Now routing becomes **translation only**.
+
+```js
+const { createNote, getNotes } = require("./services/notes.service");
+
+function router(req, res) {
+  const { method, url } = req;
+
+  if (method === "GET" && url === "/health") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok" }));
+    return;
+  }
+
+  if (method === "GET" && url === "/notes") {
+    const notes = getNotes();
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(notes));
+    return;
+  }
+
+  if (method === "POST" && url === "/notes") {
+    let body = "";
+
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on("end", () => {
+      const parsed = JSON.parse(body); // intentionally unsafe (for now)
+      const note = createNote(parsed);
+
+      res.writeHead(201, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(note));
+    });
+
+    return;
+  }
+
+  // fallback
+  res.writeHead(404, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ error: "Not Found" }));
+}
+
+module.exports = { router };
+```
+
+⚠️ We are **deliberately** not handling JSON errors yet. <br>
+Failure training is coming.
+
+## 6️⃣ Logging Service Execution _(Observability Upgrade)_
+
+> commit hash **e49767a**
+
+Modify `notes.service.js`:
+
+```js
+const store = require("../store/notes.store");
+
+function createNote({ title, content }) {
+  const start = Date.now();
+
+  const note = {
+    id: `n_${Date.now()}`,
+    title,
+    content,
+    createdAt: Date.now(),
+  };
+
+  const result = store.add(note);
+
+  console.log(`[SERVICE] createNote executed in ${Date.now() - start}ms`);
+
+  return result;
+}
+
+function getNotes() {
+  return store.getAll();
+}
+
+module.exports = {
+  createNote,
+  getNotes,
+};
+```
+
+Later, this moves to a logger. <br>
+Today, we just **see execution boundaries**.
+
+## 7️⃣ Test Like a System _(Not Just Endpoints)_
+
+### Create a note
+
+```bash
+POST /notes
+{
+  "title": "Day 3",
+  "content": "Separation of concerns"
+}
+```
+
+Response:
+
+```json
+{
+  "id": "n_170...",
+  "title": "Day 3",
+  "content": "Separation of concerns",
+  "createdAt": 170...
+}
+```
+
+Logs:
+
+```bash
+[SERVICE] createNote executed in 0ms
+[2026-01-20T...] POST /notes 201 3ms
+```
+
+You now see:
+
+- Business logic time
+- HTTP lifecycle time
+
+That’s observability.
+
+### [EXTRAS] How to Send a POST Request
+
+#### ✅ Option 1: Using `Invoke-WebRequest`
+
+```powershell
+Invoke-WebRequest `
+  -Uri http://localhost:3000/notes `
+  -Method POST `
+  -Headers @{ "Content-Type" = "application/json" } `
+  -Body '{"title":"Day 3","content":"Separation of concerns"}'
+```
+
+or:
+
+Using `curl`
+
+```bash
+curl -X POST http://localhost:3000/notes \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Day 3","content":"Separation of concerns"}'
+```
+
+#### ✅ Option 2: Using Browser `fetch` _(Temporary Test)_
+
+Open **Chrome DevTools → Console** and paste:
+
+```js
+fetch("http://localhost:3000/notes", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    title: "From Browser",
+    content: "Testing POST",
+  }),
+})
+  .then((res) => res.json())
+  .then(console.log)
+  .catch(console.error);
+```
+
+This simulates **exactly what your frontend will do later**.
+
+## 8️⃣ What You’ve Actually Learned Today
+
+Without realizing, you now understand:
+
+- Why fat controllers are bad
+- Why business logic must be testable without HTTP
+- How databases fit later without rewriting routes
+- Why microservices enforce service boundaries
+
+You are **writing backend like a senior**, not a tutorial follower.
+
+## 9️⃣ Day 3 Exit Criteria (Non-Negotiable)
+
+Proceed only if you can:
+
+- Move storage to a file **without touching router**
+- Add a new note field **without touching server.js**
+- Explain why ID generation is not in the store
+- Explain why routes are intentionally dumb
+
+If not — stop and refactor.

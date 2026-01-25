@@ -1098,3 +1098,330 @@ You’re ready only if:
 - UI code never touches form inputs
 - Events never touch DOM structure
 - You understand why refresh loses data
+
+# Day 5 — Frontend ↔ Backend Communication
+
+**Fetch · Data Flow Discipline · Zero Shortcut DOM Updates**
+
+## Objectives
+
+Connect frontend to backend **without breaking Day-4 architecture**.
+
+Backend already exists. <br>
+Frontend already exists. <br>
+Today we **connect them without letting them leak into each other**.
+
+## 0️⃣ The One Rule You Must Not Break
+
+> UI never talks to backend <br>
+> Events never mutate UI directly <br>
+> API never touches DOM
+
+If you violate this once, stop and refactor.
+
+## 1️⃣ Updated Mental Model (Lock This In)
+
+```pgsql
+User Event
+   ↓
+Event Handler
+   ↓
+API Client (fetch)
+   ↓
+Backend
+   ↓
+Response
+   ↓
+State Update
+   ↓
+UI Render
+```
+
+❌ No “just update DOM quickly” <br>
+❌ No “I’ll console.log and see” <br>
+❌ No “fetch inside UI”
+
+## 2️⃣ New Folder: API Layer _(This Is the Firewall)_
+
+> commit hash **2fe244f**
+
+Add a new folder:
+
+```matlab
+frontend/
+  ├── api/
+  │     └── notes.api.js
+```
+
+This file is the **only place** allowed to call `fetch`.
+
+## 3️⃣ notes.api.js — Backend Contract in Code
+
+> commit hash **cf03445**
+
+```js
+// api/notes.api.js
+
+const BASE_URL = "http://localhost:3000";
+
+async function fetchNotes() {
+  const res = await fetch(`${BASE_URL}/notes`);
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch notes");
+  }
+
+  return res.json();
+}
+
+async function createNote({ title, content }) {
+  const res = await fetch(`${BASE_URL}/notes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ title, content }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to create note");
+  }
+
+  return res.json();
+}
+
+export { fetchNotes, createNote };
+```
+
+Rules:
+
+- No DOM
+- No state
+- No UI logic
+- Only HTTP + JSON
+
+## 4️⃣ Update Events — This Is the Critical Change
+
+> commit hash **a15600e**
+
+### ❌ Old behavior
+
+- Event → addNote → render
+
+### ✅ New behavior
+
+- Event → API → state → render
+
+Update `notes.events.js`:
+
+```js
+// events/notes.event.js
+
+import { createNote } from "../api/notes.api.js";
+import { addNote } from "../state/notes.state.js";
+import { renderNotes } from "../ui/notes.ui.js";
+
+const form = document.getElementById("note-form");
+
+function initEvents() {
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const title = document.getElementById("title").value;
+    const content = document.getElementById("content").value;
+
+    try {
+      const createdNote = await createNote({ title, content });
+
+      addNote(createdNote);
+      renderNotes();
+      form.reset();
+    } catch (error) {
+      alert("Failed to save note");
+      console.error(error);
+    }
+  });
+}
+
+export { initEvents };
+```
+
+⚠️ Notice:
+
+- Event handler is now `async`
+- Backend owns ID + timestamp
+- UI only re-renders after state update
+
+## 5️⃣ Load Notes on Page Load _(Initial Sync)_
+
+> commit hash **fd6d29c**
+
+Update `main.js`:
+
+```js
+// main.js
+
+import { initEvents } from "./events/notes.events.js";
+import { renderNotes } from "./ui/notes.ui.js";
+import { setNotes } from "./state/notes.state.js";
+import { fetchNotes } from "./api/notes.api.js";
+
+async function initApp() {
+  try {
+    const notes = await fetchNotes();
+
+    setNotes(notes);
+    renderNotes();
+  } catch (error) {
+    alert("Failed to load notes");
+    console.error(error);
+  }
+
+  initEvents();
+}
+
+initApp();
+```
+
+This is **frontend bootstrapping**.
+
+## 6️⃣ Test the Full System _(End-to-End)_
+
+### Step 1
+
+Start backend:
+
+```nginx
+node server.js
+```
+
+### Step 2
+
+Open frontend (`index.html`)
+
+### Step 3
+
+Expected behavior:
+
+- Existing notes load on refresh ✅
+- New note appears after submit ✅
+- IDs come from backend ✅
+- Logs show POST + GET ✅
+
+## 7️⃣ Very Common Mistakes _(STOP IF YOU DO THESE)_
+
+❌ Calling fetch inside UI <br>
+❌ Updating DOM before API success <br>
+❌ Storing raw form values in state <br>
+❌ Letting frontend generate IDs <br>
+❌ Swallowing errors silently
+
+If any of these exist → refactor immediately.
+
+## 8️⃣ What You Just Achieved _(This Is Huge)_
+
+You now have:
+
+- Clear frontend ↔ backend contract
+- Predictable data flow
+- Zero DOM-state desync
+- Backend authority
+- Replaceable backend _(tomorrow you could swap it)_
+
+This is **framework-grade architecture** without a framework.
+
+## 🔍 Day 5 Exit Criteria _(Be Honest)_
+
+Proceed only if you can say YES to all:
+
+- Refreshing page reloads notes from backend
+- Removing backend breaks app clearly
+- No file violates its responsibility
+- You can explain the full data flow aloud
+
+## [optional] Browser Reality - CORS Policy!
+
+CORS blocking is not a bug — this is the **browser doing its job**.
+
+### ❗ What This Error REALLY Means
+
+```pgsql
+Access to fetch at 'http://localhost:3000/notes'
+from origin 'http://localhost:5500'
+has been blocked by CORS policy
+```
+
+**Translation:**
+
+- Frontend is running on **origin A**
+
+  `http://localhost:5500`
+
+- Backend is running on **origin B**
+
+http://localhost:3000
+
+Browser says:
+
+> _“Hey JS, you’re trying to talk cross-origin.
+> I need explicit permission from the server.”_
+
+👉 **CORS is a browser security rule**, not Node, not fetch, not your code.
+
+> CORS is enforced by the browser, not the server
+
+### ✅ The Fix _(Raw Node, No Libraries)_
+
+> commit hash **1d4f0c5**
+
+Update `server.js` in backend _(Minimal & Correct)_
+
+```js
+const http = require("http");
+const { router } = require("./router");
+const { log } = require("./logger");
+
+const PORT = 3000;
+
+const server = http.createServer((req, res) => {
+  const start = Date.now();
+
+  // ✅ CORS HEADERS (GLOBAL)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // ✅ Handle preflight requests
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+
+    log({
+      method: req.method,
+      url: req.url,
+      status: res.statusCode,
+      duration,
+    });
+  });
+
+  router(req, res);
+});
+
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
+```
+
+Why this works:
+
+- Browser sends an **OPTIONS preflight**
+- You respond cleanly
+- Browser is satisfied
+- Real request proceeds
+
+> **Restart is Mandatory**

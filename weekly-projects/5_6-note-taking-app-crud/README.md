@@ -542,9 +542,7 @@ You are allowed to proceed only if:
 
 ## 0️⃣ Architectural Rule of the Day
 
-> **Routes translate HTTP → intent** <br>
-> **Services execute business logic** <br>
-> **Server knows nothing about notes**
+> **Routes translate HTTP → intent** <br> > **Services execute business logic** <br> > **Server knows nothing about notes**
 
 If a route _decides_ anything → it’s doing too much.
 
@@ -857,3 +855,246 @@ Proceed only if you can:
 - Explain why routes are intentionally dumb
 
 If not — stop and refactor.
+
+# Day 4 — Frontend Skeleton
+
+**Vanilla JS · UI ≠ Data · No Backend Yet**
+
+## Objectives
+
+> Build a frontend that can render notes **without knowing where they come from**.
+
+If you do Day 4 correctly, plugging in the backend tomorrow will feel _boringly_ easy.
+
+## 0️⃣ Ground Rules _(Non-Negotiable)_
+
+❌ No fetch yet <br>
+❌ No backend calls <br>
+❌ No global mutable chaos <br>
+❌ No DOM manipulation from random places <br>
+✅ UI renders from state <br>
+✅ Events only request state changes
+
+Think **React without React**.
+
+## 1️⃣ Mental Model First _(Read Slowly)_
+
+```nginx
+STATE  →  UI
+EVENTS →  STATE
+```
+
+- UI never mutates data
+- Events never touch DOM directly
+- There is **one source of truth**
+
+If you violate this today, you’ll suffer on Day 5.
+
+## 2️⃣ Folder Structure _(Frontend Begins)_
+
+> commit hash **3cd9dee**
+
+Create this structure:
+
+```matlab
+frontend/
+  ├── index.html
+  ├── main.js
+  ├── state/
+  │     └── notes.state.js
+  ├── ui/
+  │     └── notes.ui.js
+  └── events/
+        └── notes.events.js
+```
+
+Each folder answers **one question**:
+
+- `state` → what data exists
+- `ui` → how data is shown
+- `events` → what user does
+
+## 3️⃣ index.html — Dumb HTML Only
+
+> commit hash **2c5a74d**
+
+HTML must be **boring**.
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Notes</title>
+  </head>
+  <body>
+    <h1>Notes</h1>
+
+    <form id="note-form">
+      <input id="title" placeholder="Title" />
+      <textarea id="content" placeholder="Content"></textarea>
+      <button type="submit">Add</button>
+    </form>
+
+    <ul id="notes-list"></ul>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
+```
+
+❌ No inline JS <br>
+❌ No logic in HTML
+
+## 4️⃣ notes.state.js — Single Source of Truth
+
+> commit hash **27fe4de**
+
+This replaces your database _(for now)_.
+
+```js
+// state/notes.state.js
+
+let notes = [];
+
+function getNotes() {
+  return notes;
+}
+
+function setNotes(newNotes) {
+  notes = newNotes;
+}
+
+function addNote(note) {
+  notes = [...notes, note];
+}
+
+export { getNotes, setNotes, addNote };
+```
+
+Rules:
+
+- No DOM
+- No events
+- No assumptions about backend
+
+## 5️⃣ notes.ui.js — Rendering Only
+
+> commit hash **4ca0219**
+
+UI is a **pure function of state**.
+
+```js
+// ui/notes.ui.js
+
+import { getNotes } from "../state/notes.state.js";
+
+const listEl = document.getElementById("notes-list");
+
+function renderNotes() {
+  const notes = getNotes();
+
+  listEl.innerHTML = "";
+
+  notes.forEach((note) => {
+    const li = document.createElement("li");
+    li.textContent = `${note.title}: ${note.content}`;
+    listEl.appendChild(li);
+  });
+}
+
+export { renderNotes };
+```
+
+UI does:
+
+- Read state
+- Paint DOM
+
+Nothing else.
+
+## 6️⃣ notes.events.js — User Intent Only
+
+> commit hash **a45f777**
+
+Events **request changes**, they don’t enforce them.
+
+```js
+// events/notes.event.js
+
+import { addNote } from "../state/notes.state.js";
+import { renderNotes } from "../ui/notes.ui.js";
+
+const form = document.getElementById("note-form");
+
+function initEvents() {
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const title = document.getElementById("title").value;
+    const content = document.getElementById("content").value;
+
+    addNote({
+      id: Date.now(),
+      title,
+      content,
+    });
+
+    renderNotes();
+    form.reset();
+  });
+}
+
+export { initEvents };
+```
+
+Yes — we’re generating IDs here **temporarily**. <br>
+We’ll kill this tomorrow.
+
+## 7️⃣ main.js — The Glue _(Nothing Else)_
+
+> commit hash **8c9cf48**
+
+```js
+// main.js
+
+import { initEvents } from "./events/notes.events.js";
+import { renderNotes } from "./ui/notes.ui.js";
+
+initEvents();
+renderNotes();
+```
+
+That’s it. <br>
+If `main.js` grows → architecture failed.
+
+## 8️⃣ Test Like a Frontend Engineer
+
+Open `index.html` in browser.
+
+- Add notes
+- Refresh page → notes disappear _(expected)_
+- UI updates only via `renderNotes()`
+
+If UI changes **without calling render** → bug.
+
+## 9️⃣ What You’ve Actually Learned Today
+
+Without React, you just learned:
+
+- State-driven UI
+- Controlled data flow
+- Why React exists
+- Why DOM mutation sprawl is evil
+
+Most people learn this **after** frameworks. <br>
+You learned it **before**.
+
+## 🔍 Day 4 Exit Criteria
+
+You’re ready only if:
+
+- You can replace `addNote()` with API call tomorrow
+- UI code never touches form inputs
+- Events never touch DOM structure
+- You understand why refresh loses data

@@ -1,5 +1,5 @@
-import { addNote } from "../state/notes.state";
-import { renderNotes } from "../ui/notes.ui";
+import { addNote } from "../state/notes.state.js";
+import { renderNotes } from "../ui/notes.ui.js";
 
 const form = document.getElementById("note-form");
 

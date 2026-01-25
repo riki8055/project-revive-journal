@@ -1,5 +1,5 @@
-import { initEvents } from "./events/notes.events";
-import { renderNotes } from "./ui/notes.ui";
+import { initEvents } from "./events/notes.events.js";
+import { renderNotes } from "./ui/notes.ui.js";
 
 initEvents();
 renderNotes();

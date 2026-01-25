@@ -1,4 +1,4 @@
-import { getNotes } from "../state/notes.state";
+import { getNotes } from "../state/notes.state.js";
 
 const listEl = document.getElementById("notes-list");
 

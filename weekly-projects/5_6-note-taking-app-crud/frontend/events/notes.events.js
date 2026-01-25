@@ -1,23 +1,26 @@
+import { createNote } from "../api/notes.api.js";
 import { addNote } from "../state/notes.state.js";
 import { renderNotes } from "../ui/notes.ui.js";
 
 const form = document.getElementById("note-form");
 
 function initEvents() {
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const title = document.getElementById("title").value;
     const content = document.getElementById("content").value;
 
-    addNote({
-      id: Date.now(),
-      title,
-      content,
-    });
+    try {
+      const createdNote = await createNote({ title, content });
 
-    renderNotes();
-    form.reset();
+      addNote(createdNote);
+      renderNotes();
+      form.reset();
+    } catch (error) {
+      alert("Failed to save note");
+      console.error(error);
+    }
   });
 }
 

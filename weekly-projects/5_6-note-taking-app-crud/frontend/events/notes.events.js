@@ -23,7 +23,7 @@ function initEvents() {
       renderNotes();
       form.reset();
     } catch (error) {
-      alert("Failed to save note");
+      alert(error.message);
       console.error(error);
     }
   });

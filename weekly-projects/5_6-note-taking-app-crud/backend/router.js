@@ -34,10 +34,15 @@ function router(req, res) {
         return;
       }
 
-      const note = createNote(parsed);
+      try {
+        const note = createNote(parsed);
 
-      res.writeHead(201, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(note));
+        res.writeHead(201, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(note));
+      } catch (error) {
+        res.writeHead(422, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: error.message }));
+      }
     });
 
     return;

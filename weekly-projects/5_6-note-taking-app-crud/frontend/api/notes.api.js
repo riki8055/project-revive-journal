@@ -19,11 +19,13 @@ async function createNote({ title, content }) {
     body: JSON.stringify({ title, content }),
   });
 
+  const data = await res.json();
+
   if (!res.ok) {
-    throw new Error("Failed to create note");
+    throw new Error(data.error || "Failed to create note");
   }
 
-  return res.json();
+  return data;
 }
 
 export { fetchNotes, createNote };

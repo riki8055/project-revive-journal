@@ -19,14 +19,17 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  res.on("finish", () => {
-    const duration = Date.now() - start;
+  log("INFO", "Request received", {
+    method: req.method,
+    url: req.url,
+  });
 
-    log({
+  res.on("finish", () => {
+    log("INFO", "Request completed", {
       method: req.method,
       url: req.url,
       status: res.statusCode,
-      duration,
+      duration: `${Date.now() - start}ms`,
     });
   });
 

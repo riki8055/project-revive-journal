@@ -24,7 +24,16 @@ function router(req, res) {
     });
 
     req.on("end", () => {
-      const parsed = JSON.parse(body); // intentionally unsafe (for now)
+      let parsed;
+
+      try {
+        parsed = JSON.parse(body);
+      } catch (error) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Invalid JSON" }));
+        return;
+      }
+
       const note = createNote(parsed);
 
       res.writeHead(201, { "Content-Type": "application/json" });

@@ -1893,3 +1893,373 @@ Explain the flow of creating a note — no code.
 - Why
 
 If you can’t write this clearly → system isn’t clear.
+
+## Day 8 — Logging as a First-Class Feature
+
+**Observability > Debugging**
+
+## Objectives
+
+> Make your system explain itself **without opening the code**.
+
+From today onward:
+
+- `console.log()` is **not allowed**
+- Logs are **structured**
+- Logs answer **questions**, not emotions
+
+## 0️⃣ Mental Reset _(Very Important)_
+
+Most developers use logs like this:
+
+```js
+console.log("here");
+console.log("inside if");
+console.log(data);
+```
+
+That is **panic logging**.
+
+We are doing **diagnostic logging**.
+
+A good log answers:
+
+- "What happened"?
+- "Where?"
+- "Why?"
+- "How long did it take?"
+
+## 1️⃣ Define Logging Levels _(Before Code)_
+
+We will use **four levels** _(simple, no overengineering)_:
+
+| Level | Meaning              | Example           |
+| ----- | -------------------- | ----------------- |
+| INFO  | Normal system events | Request received  |
+| WARN  | Recoverable issues   | Validation failed |
+| ERROR | System failure       | JSON parse error  |
+| DEBUG | Internal details     | Payload size      |
+
+We are **not implementing filters yet** — just labeling.
+
+## 2️⃣ Backend: Upgrade Logger _(Core of the Day)_
+
+> commit hash **78df0fa**
+
+### ❌ Old logger _(too weak)_
+
+```js
+console.log(...)
+```
+
+### ✅ New structured logger _(logger.js)_
+
+```js
+// backend/logger.js
+
+function log(level, message, meta = {}) {
+  const entry = {
+    time: new Date().toISOString(),
+    level,
+    message,
+    ...meta,
+  };
+
+  console.log(JSON.stringify(entry));
+}
+
+module.exports = { log };
+```
+
+Why JSON?
+
+- Machine-readable
+- Searchable
+- Production-grade habit
+
+## 3️⃣ Backend: Log Request Lifecycle _(Server Layer)_
+
+> commit hash **00fd6fa**
+
+Update `server.js`
+
+```js
+const http = require("http");
+const { router } = require("./router");
+const { log } = require("./logger");
+
+const PORT = 3000;
+
+const server = http.createServer((req, res) => {
+  const start = Date.now();
+
+  // ✅ CORS HEADERS (GLOBAL)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // ✅ Handle preflight requests
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  log("INFO", "Request received", {
+    method: req.method,
+    url: req.url,
+  });
+
+  res.on("finish", () => {
+    log("INFO", "Request completed", {
+      method: req.method,
+      url: req.url,
+      status: res.statusCode,
+      duration: `${Date.now() - start}ms`,
+    });
+  });
+
+  router(req, res);
+});
+
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
+```
+
+Now every request:
+
+- has a start log
+- has an end log
+- has duration
+- has status
+
+You can replay traffic mentally.
+
+## 4️⃣ Backend: Log Validation Failures _(Service Layer)_
+
+> commit hash **8d3c3c4**
+
+Update `notes.service.js`
+
+```js
+const { log } = require("../logger");
+const store = require("../store/notes.store");
+
+function createNote({ title, content }) {
+  if (!title || !content) {
+    log("WARN", "Validation failed: missing fields", {
+      titlePresent: !!title,
+      contentPresent: !!content,
+    });
+    throw new Error("Missing Fields");
+  }
+
+  if (typeof title !== "string" || typeof content !== "string") {
+    log("WARN", "Validation failed: invalid types", {
+      titleType: typeof title,
+      contentType: typeof content,
+    });
+    throw new Error("Invalid field types");
+  }
+
+  const start = Date.now();
+
+  const note = {
+    id: `n_${Date.now()}`,
+    title,
+    content,
+    createdAt: Date.now(),
+  };
+
+  const result = store.add(note);
+
+  log("INFO", "Note created", { id: note.id });
+
+  return result;
+}
+
+function getNotes() {
+  return store.getAll();
+}
+
+module.exports = {
+  createNote,
+  getNotes,
+};
+```
+
+Key idea:
+
+- Logs describe **intent + outcome**
+- Not raw data dumps
+
+## 5️⃣ Backend: Log JSON Parse Errors _(Router Layer)_
+
+> commit hash **65a60f8**
+
+In `router.js`:
+
+```js
+try {
+  parsed = JSON.parse(body);
+} catch (error) {
+  log("ERROR", "Invalid JSON received", {
+    bodySnippet: body.slice(0, 50),
+  });
+
+  res.writeHead(400, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ error: "Invalid JSON" }));
+  return;
+}
+```
+
+Notice:
+
+- ERROR level
+- No full payload logging _(security habit)_
+- Still graceful response
+
+## 6️⃣ Frontend: Logging Without console.log Abuse
+
+> commit hash **c2b51f8**
+
+Create:
+
+```bash
+frontend/logger.js
+```
+
+```js
+// frontend/logger.js
+
+export function log(level, message, meta = {}) {
+  console[level === "ERROR" ? "error" : "log"]({
+    time: new Date().toISOString(),
+    level,
+    message,
+    ...meta,
+  });
+}
+```
+
+This keeps **logging centralized**.
+
+## 7️⃣ Frontend: Log API Lifecycle
+
+> commit hash **bd2cf27**
+
+Update `notes.api.js`:
+
+```js
+import { log } from "../logger.js";
+
+const BASE_URL = "http://localhost:3000";
+
+async function fetchNotes() {
+  log("INFO", "Fetching notes");
+
+  const start = Date.now();
+  const res = await fetch(`${BASE_URL}/notes`);
+
+  log("INFO", "Fetch notes response", {
+    status: res.status,
+    duration: Date.now() - start,
+  });
+
+  if (!res.ok) {
+    log("ERROR", "Fetch notes failed");
+    throw new Error("Failed to fetch notes");
+  }
+
+  return res.json();
+}
+
+async function createNote({ title, content }) {
+  const res = await fetch(`${BASE_URL}/notes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ title, content }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to create note");
+  }
+
+  return data;
+}
+
+export { fetchNotes, createNote };
+```
+
+Now frontend logs:
+
+- Intent
+- Duration
+- Outcome
+
+## 8️⃣ What Logs Should Look Like Now
+
+### Backend
+
+```json
+{
+  "time": "2026-01-26T14:01:22Z",
+  "level": "INFO",
+  "message": "Request completed",
+  "method": "POST",
+  "url": "/notes",
+  "status": 201,
+  "duration": 4
+}
+```
+
+### Frontend
+
+```js
+{
+  time: "2026-01-26T14:01:22Z",
+  level: "INFO",
+  message: "Fetch notes response",
+  status: 200,
+  duration: 12
+}
+```
+
+You can now debug **without stepping through code**.
+
+## 9️⃣ Kill These Anti-Patterns Immediately
+
+❌ `console.log(data)` <br>
+❌ Logs without context <br>
+❌ Logs without timestamps <br>
+❌ Logs inside UI render loops <br>
+❌ Logs only on success
+
+If logs exist only when things work → they are useless.
+
+## 🔍 Day 8 Exit Criteria _(Hard)_
+
+You may proceed only if:
+
+✅ Every request is logged start → end <br>
+✅ Validation failures appear as WARN <br>
+✅ Crashes appear as ERROR <br>
+✅ Frontend logs show API timing <br>
+✅ You can diagnose a failure using logs alone
+
+## 🧠 What Changed in You Today
+
+You stopped asking:
+
+> “Why is this not working?”
+
+You started asking:
+
+> “What does the system say happened?”
+
+That’s the difference between **debugging** and **engineering**.

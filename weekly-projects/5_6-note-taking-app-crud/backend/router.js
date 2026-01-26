@@ -1,3 +1,4 @@
+const { log } = require("./logger");
 const { createNote, getNotes } = require("./services/notes.service");
 
 function router(req, res) {
@@ -29,6 +30,9 @@ function router(req, res) {
       try {
         parsed = JSON.parse(body);
       } catch (error) {
+        log("ERROR", "Invalid JSON received", {
+          bodySnippet: body.slice(0, 50),
+        });
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Invalid JSON" }));
         return;

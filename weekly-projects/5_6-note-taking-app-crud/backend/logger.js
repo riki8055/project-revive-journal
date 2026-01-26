@@ -1,7 +1,12 @@
-function log({ method, url, status, duration }) {
-  const time = new Date().toISOString();
+function log(level, message, meta = {}) {
+  const entry = {
+    time: new Date().toISOString(),
+    level,
+    message,
+    ...meta,
+  };
 
-  console.log(`[${time}] ${method} ${url} ${status} ${duration}ms`);
+  console.log(JSON.stringify(entry));
 }
 
 module.exports = { log };

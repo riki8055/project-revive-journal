@@ -1667,3 +1667,229 @@ If you can’t explain that last point → stop.
 - Why “happy path only” code is amateur code
 
 This is **production thinking**.
+
+# Day 7 — Week 1 Review, Refactor & Architecture Lock
+
+**Stabilize · Simplify · Explainability Test**
+
+## Objectives
+
+> Ensure your system is **clean, predictable, explainable**, and ready to be **intentionally** broken next week.
+
+## 1️⃣ First: Architecture Sanity Check
+
+Before opening the editor, answer these out loud:
+
+### Frontend
+
+- Who owns data? → **state**
+- Who touches DOM? → **ui**
+- Who talks to backend? → **api**
+- Who coordinates flow? → **events**
+- Does any file violate this? → If yes, refactor
+
+### Backend
+
+- Who handles HTTP? → **server + router**
+- Who enforces rules? → **services**
+- Who stores data? → **store**
+- Who logs? → **logger**
+- Does any layer know too much? → Fix it
+
+If you can’t answer instantly, something is leaking.
+
+## 2️⃣ Backend Refactor Pass _(Minimal, Surgical)_
+
+### ✅ Check 1: `server.js`
+
+Must contain only:
+
+- HTTP server creation
+- CORS handling
+- Request timing
+- Logging hook
+- Call to router
+
+❌ If you see:
+
+- Note logic
+- Validation
+- JSON parsing
+
+→ **Architecture violation**
+
+### ✅ Check 2: `router.js`
+
+Must do **only translation**:
+
+- HTTP → service call
+- service error → HTTP status
+- No business rules
+
+**Good smell:**
+
+```js
+try {
+  serviceCall()
+} catch {
+  res.writeHead(...)
+}
+```
+
+**Bad smell:**
+
+```js
+if (!title) { ... } // ❌ belongs in service
+```
+
+### ✅ Check 3: `notes.service.js`
+
+Must:
+
+- Enforce invariants
+- Validate business data
+- Decide IDs & timestamps
+
+Must NOT:
+
+- Touch `req`, `res`
+- Set status codes
+- Log HTTP stuff
+
+If tomorrow you swap HTTP with CLI — service should still work.
+
+### ✅ Check 4: store
+
+Ask:
+
+> “Can I replace this with a database without touching services?”
+
+If answer ≠ yes → refactor.
+
+## 3️⃣ Frontend Refactor Pass _(This Is Crucial)_
+
+### ✅ UI layer (`ui/`)
+
+- Reads from state
+- Renders DOM
+- No fetch
+- No event listeners
+
+If UI calls fetch → **hard stop**
+
+### ✅ State layer (`state/`)
+
+- Pure data
+- No DOM
+- No fetch
+- No side effects
+
+State should feel _boring_.
+
+### ✅ API layer (`api/`)
+
+- Only `fetch`
+- Throws errors upward
+- No alert
+- No DOM
+- No state mutation
+
+API is a **thin wire**, nothing else.
+
+### ✅ Events layer (`events/`)
+
+- Reads input values
+- Calls API
+- Updates state
+- Triggers render
+
+Events are the **orchestrator**, not the executor.
+
+## 4️⃣ Kill Accidental Complexity _(Important)_
+
+Now actively remove: <br>
+❌ Dead console.logs <br>
+❌ Commented-out experiments <br>
+❌ Duplicate logic <br>
+❌ Inline JSON literals repeated in many places <br>
+❌ Magic strings scattered around <br>
+
+Replace magic with **clear constants** if needed.
+
+## 5️⃣ Observability Review _(Week 1 Level)_
+
+Ask yourself:
+
+### Backend
+
+- Can I see:
+
+  - request start?
+  - request end?
+  - status code?
+  - duration?
+
+- Can I tell where it failed?
+
+### Frontend
+
+- Can I distinguish:
+  - validation error?
+  - network error?
+  - server error?
+
+If two failures look the same → observability is weak.
+
+## 6️⃣ The Explainability Test _(Non-Negotiable)_
+
+You must be able to answer **all** of these:
+
+- Why is validation duplicated?
+- Why doesn’t UI call fetch?
+- Why does service throw errors instead of returning flags?
+- Why is CORS in `server.js`?
+- What breaks if backend is down?
+
+If even one answer is fuzzy → revisit that area.
+
+### 7️⃣ Day 7 Exit Criteria _(Hard Gate)_
+
+You are allowed to proceed only if: <br>
+✅ No file violates its responsibility <br>
+✅ You can delete console.logs safely <br>
+✅ README explains system clearly <br>
+✅ You feel _bored_, not excited <br>
+
+> Bored = stable <br>
+> Excited = chaos
+
+## 🧠 What You Actually Achieved in Week 1 _(Month 2)_
+
+You didn’t build a “note app”.
+
+You built:
+
+- A clean frontend architecture _(without React)_
+- A layered backend _(without Express)_
+- A predictable data flow
+- A system that can be **reasoned about**
+
+This is **engineering**, not coding.
+
+## Final Verdict: Force Yourself to Explain
+
+### 1. Architecture Diagram _(ASCII is fine)_
+
+![alt text](image.png)
+
+### 2. Data Flow _(1 paragraph)_
+
+Explain the flow of creating a note — no code.
+
+### 3. Failure Philosophy
+
+- What you validate on frontend
+- What you validate on backend
+- Why
+
+If you can’t write this clearly → system isn’t clear.

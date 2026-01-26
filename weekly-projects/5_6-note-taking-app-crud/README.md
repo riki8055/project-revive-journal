@@ -1425,3 +1425,245 @@ Why this works:
 - Real request proceeds
 
 > **Restart is Mandatory**
+
+# Day 6 — Validation & Defensive Coding
+
+**Trust Nothing · Fail Loud · Fail Clean**
+
+## Objectives
+
+> Make the system resilient to bad input, bad JSON, and partial failure — without breaking architecture.
+
+## 0️⃣ The Core Mindset Shift _(Lock This In)_
+
+> If invalid data enters your system, architecture has already failed.
+
+Validation is **not polish**. <br>
+Validation is **system integrity**.
+
+## 1️⃣ What We Will Defend Against _(Explicit List)_
+
+By end of Day 6, your app must survive:
+
+### Backend-side
+
+❌ Invalid JSON <br>
+❌ Empty body <br>
+❌ Missing title / content <br>
+❌ Non-string values <br>
+❌ Double responses _(already fixed earlier)_
+
+### Frontend-side
+
+❌ Empty inputs <br>
+❌ API failure <br>
+❌ Backend validation errors
+
+No silent failures. Ever.
+
+## 2️⃣ Backend: JSON Parsing Must Not Kill the Server
+
+> commit hash **18dfe92**
+
+❌ Current dangerous code
+
+```js
+const parsed = JSON.parse(body); // 💥 crash if invalid
+```
+
+### ✅ Defensive fix _(router.js)_
+
+```js
+req.on("end", () => {
+  let parsed;
+
+  try {
+    parsed = JSON.parse(body);
+  } catch (error) {
+    res.writeHead(400, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Invalid JSON" }));
+    return;
+  }
+
+  const note = createNote(parsed);
+
+  res.writeHead(201, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(note));
+});
+```
+
+🧠 Key insight:
+
+- **JSON.parse is a trust boundary**
+- Trust boundaries must always have `try/catch`
+
+## 3️⃣ Backend: Validate Business Data _(Service Layer)_
+
+> commit hash **5cbae2b**
+
+Validation logic **does NOT belong in routes**.
+
+### Add validation inside `notes.service.js`
+
+```js
+function createNote({ title, content }) {
+  if (!title || !content) {
+    throw new Error("Missing fields");
+  }
+
+  if (typeof title !== "string" || typeof content !== "string") {
+    throw new Error("Invalid field types");
+  }
+
+  const note = {
+    id: `n_${Date.now()}`,
+    title: title.trim(),
+    content: content.trim(),
+    createdAt: Date.now(),
+  };
+
+  return store.add(note);
+}
+```
+
+Now service **protects invariants**.
+
+## 4️⃣ Catch Service Errors in Router _(Translation Layer)_
+
+> commit hash **6220e84**
+
+Routes **translate exceptions → HTTP responses**.
+
+### Update POST handler in `router.js`
+
+```js
+try {
+  const note = createNote(parsed);
+
+  res.writeHead(201, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(note));
+} catch (error) {
+  res.writeHead(422, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ error: error.message }));
+}
+```
+
+🧠 Important:
+
+- Service throws
+- Router decides HTTP meaning
+- Service stays HTTP-agnostic
+
+## 5️⃣ Frontend: Validate Before Calling Backend
+
+> commit hash **c48caac**
+
+Frontend validation is about **UX**, not security.
+
+### Update `notes.events.js`
+
+```js
+if (!title.trim() || !content.trim()) {
+  alert("Title and content are required");
+  return;
+}
+```
+
+Why still validate on backend? <br>
+👉 Because frontend can be bypassed.
+
+### 6️⃣ Frontend: Handle Backend Errors Gracefully
+
+> commit hash **7d6cf53**
+
+### Update API layer (`notes.api.js`)
+
+```js
+async function createNote({ title, content }) {
+  const res = await fetch(`${BASE_URL}/notes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, content }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to create note");
+  }
+
+  return data;
+}
+```
+
+Now backend errors **flow upward cleanly**.
+
+## 7️⃣ Frontend: Surface Errors Without Breaking Flow
+
+> commit hash **1dfb238**
+
+In `notes.events.js`:
+
+```js
+try {
+  const createdNote = await createNote({ title, content });
+  addNote(createdNote);
+  renderNotes();
+  form.reset();
+} catch (err) {
+  alert(err.message);
+}
+```
+
+❌ No console-only errors <br>
+❌ No silent failures
+
+## 8️⃣ Test Like a Chaos Engineer
+
+Try these **deliberately**:
+
+### Backend crash tests
+
+- Send invalid JSON
+- Send empty body
+- Send { "title": 123 }
+
+**Expected:**
+
+- Server does NOT crash
+- Proper status code
+- Clear error message
+
+### Frontend tests
+
+- Submit empty form
+- Kill backend, then submit
+- Refresh page with backend down
+
+**Expected:**
+
+- App fails clearly
+- UI stays responsive
+- No broken state
+
+## 🔍 Day 6 Exit Criteria _(Be Brutally Honest)_
+
+You may proceed only if:
+
+- Invalid JSON does NOT crash server
+- Missing fields return 422
+- Frontend never sends empty data
+- Errors propagate cleanly
+- You understand why validation lives where it does
+
+If you can’t explain that last point → stop.
+
+## 🧠 What You Actually Learned Today
+
+- Trust boundaries
+- Defense in depth
+- Why services exist
+- Why APIs return 4xx
+- Why “happy path only” code is amateur code
+
+This is **production thinking**.

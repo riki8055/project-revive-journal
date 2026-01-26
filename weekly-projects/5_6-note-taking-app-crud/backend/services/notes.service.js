@@ -1,6 +1,14 @@
 const store = require("../store/notes.store");
 
 function createNote({ title, content }) {
+  if (!title || !content) {
+    throw new Error("Missing Fields");
+  }
+
+  if (typeof title !== "string" || typeof content !== "string") {
+    throw new Error("Invalid field types");
+  }
+
   const start = Date.now();
 
   const note = {

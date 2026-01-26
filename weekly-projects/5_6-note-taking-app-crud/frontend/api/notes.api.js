@@ -1,9 +1,20 @@
+import { log } from "../logger.js";
+
 const BASE_URL = "http://localhost:3000";
 
 async function fetchNotes() {
+  log("INFO", "Fetching notes");
+
+  const start = Date.now();
   const res = await fetch(`${BASE_URL}/notes`);
 
+  log("INFO", "Fetch notes response", {
+    status: res.status,
+    duration: Date.now() - start,
+  });
+
   if (!res.ok) {
+    log("ERROR", "Fetch notes failed");
     throw new Error("Failed to fetch notes");
   }
 

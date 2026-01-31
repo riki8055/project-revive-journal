@@ -4,6 +4,17 @@ import { log } from "../logger.js";
 // const BASE_URL = "http://localhost:3001";
 const BASE_URL = "https://cfkzk3-3001.csb.app";
 
+async function safeJsonParse(response) {
+  try {
+    return await response.json();
+  } catch (err) {
+    log("ERROR", "Invalid JSON in response", {
+      status: response.status,
+    });
+    throw new Error("Corrupt server response");
+  }
+}
+
 async function fetchNotes() {
   log("INFO", "Fetching notes");
 
@@ -34,7 +45,8 @@ async function fetchNotes() {
     throw new Error("Failed to fetch notes");
   }
 
-  return res.json();
+  const data = await safeJsonParse(res);
+  return data;
 }
 
 async function createNote({ title, content }) {

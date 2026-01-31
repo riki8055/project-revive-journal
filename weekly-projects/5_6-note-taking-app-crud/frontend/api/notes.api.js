@@ -25,14 +25,19 @@ async function fetchNotes() {
     res = await fetchWithTimeout(
       `${BASE_URL}/notes`,
       {},
-      10000, // 3 seconds timeout
+      10000 // 3 seconds timeout
     );
   } catch (err) {
     if (err.name === "AbortError") {
       log("ERROR", "Fetch notes timed out");
       throw new Error("Request timed out");
     }
-    throw err;
+
+    log("ERROR", "Network failure or server down", {
+      error: err.message,
+    });
+
+    throw new Error("Server is unreachable");
   }
 
   log("INFO", "Fetch notes response", {
@@ -48,8 +53,8 @@ async function fetchNotes() {
   let data;
   try {
     data = await safeJsonParse(res);
-  } catch(err) {
-    throw err;  // already meaningful
+  } catch (err) {
+    throw err; // already meaningful
   }
 
   return data;

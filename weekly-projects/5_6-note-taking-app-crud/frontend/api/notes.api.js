@@ -45,7 +45,13 @@ async function fetchNotes() {
     throw new Error("Failed to fetch notes");
   }
 
-  const data = await safeJsonParse(res);
+  let data;
+  try {
+    data = await safeJsonParse(res);
+  } catch(err) {
+    throw err;  // already meaningful
+  }
+
   return data;
 }
 

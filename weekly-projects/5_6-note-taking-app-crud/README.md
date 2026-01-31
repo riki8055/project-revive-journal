@@ -2263,3 +2263,259 @@ You started asking:
 > “What does the system say happened?”
 
 That’s the difference between **debugging** and **engineering**.
+
+# Day 9 — API Timeout Simulation
+
+**Slow Network · Hung Requests · Controlled Failure**
+
+## Objectives
+
+Teach your system to **stop waiting, report clearly**, and **recover gracefully** when the backend is slow or stuck.
+
+## 0️⃣ Core Reality Check _(Internalize This)_
+
+> HTTP has **no built-in timeout**.
+
+If the server:
+- hangs
+- delays
+- forgets to respond
+
+👉 `fetch()` will wait forever.
+
+If you don’t design for this, your UI freezes politely… forever.
+
+## 1️⃣ What We Are Simulating Today
+
+We will deliberately create:
+
+### Backend-side failures
+
+- Artificial response delay
+- Requests that take _too long_
+
+### Frontend-side defenses
+
+- Client-side timeout
+- Abort in-flight requests
+- Clear timeout error
+
+No retries yet _(Day 12)_.
+
+## 2️⃣ Backend: Introduce Artificial Latency _(Controlled Sabotage)_
+
+> commit hash **967b5e3**
+
+### Add delay utility _(backend/utils/delay.js)_
+
+```js
+// utils/delay.js
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+module.exports = { delay };
+```
+
+### Inject delay into notes route _(router.js)_
+
+At the top of `/notes` GET handler:
+
+```js
+const { delay } = require('./utils/delay');
+```
+
+Then:
+
+```js
+if (method === 'GET' && url === '/notes') {
+  (async () => {
+    await delay(5000); // ⏱ 5 seconds — intentional
+
+    const notes = getNotes();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(notes));
+  })();
+
+  return;
+}
+```
+
+🔥 This simulates:
+
+- slow database
+- congested server
+- cold start
+
+Your backend is now **hostile by design**.
+
+## 3️⃣ Observe the Failure _(Do NOT Fix Yet)_
+
+Reload frontend.
+
+What happens?
+
+- UI appears frozen
+- No feedback
+- No error
+- User confused
+
+This is **expected**. <br>
+Now we fix it **properly**.
+
+## 4️⃣ Frontend: Implement Fetch Timeout _(Correct Way)_
+
+> commit hash **2b17ae9**
+
+There is only **one correct way**: 👉 `AbortController`
+
+### Create timeout wrapper _(frontend/api/fetchWithTimeout.js)_
+
+```js
+// api/fetchWithTimeout.js
+export async function fetchWithTimeout(url, options = {}, timeout = 3000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    return response;
+  } finally {
+    clearTimeout(id);
+  }
+}
+```
+
+This gives you **real cancellation**, not fake timers.
+
+## 5️⃣ Use Timeout Wrapper in API Layer
+
+> commit hash 2bea929
+
+Update `notes.api.js`:
+
+```js
+import { fetchWithTimeout } from './fetchWithTimeout.js';
+import { log } from '../logger.js';
+
+async function fetchNotes() {
+  log('INFO', 'Fetching notes (with timeout)');
+
+  const start = Date.now();
+
+  let res;
+  try {
+    res = await fetchWithTimeout(
+      `${BASE_URL}/notes`,
+      {},
+      3000 // 3 seconds timeout
+    );
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      log('ERROR', 'Fetch notes timed out');
+      throw new Error('Request timed out');
+    }
+    throw err;
+  }
+
+  log('INFO', 'Fetch notes response', {
+    status: res.status,
+    duration: Date.now() - start
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch notes');
+  }
+
+  return res.json();
+}
+```
+
+Now:
+- frontend refuses to wait forever
+- timeout is explicit
+- error is meaningful
+
+## 6️⃣ Frontend UX: Surface Timeout Clearly
+
+> commit hash **eccbac4**
+
+In `main.js`:
+
+```js
+try {
+  const notes = await fetchNotes();
+  setNotes(notes);
+  renderNotes();
+} catch (err) {
+  alert(err.message); // later → proper UI
+}
+```
+
+Timeout message should be **distinct**, not generic.
+
+## 7️⃣ Logs Are the Real Test
+
+### Frontend log _(timeout)_
+
+```js
+{
+  level: "ERROR",
+  message: "Fetch notes timed out"
+}
+```
+
+### Backend log _(still finishes later)_
+
+```json
+{
+  "level":"INFO",
+  "message":"Request completed",
+  "duration":5002
+}
+```
+
+🧠 Insight:
+
+- Backend did its job
+- Frontend chose to stop waiting
+- Both are correct
+
+This is **distributed systems reality**.
+
+## 8️⃣ Important Rule _(Do NOT Break This)_
+
+❌ Never add timeouts in UI <br>
+❌ Never put timeouts in services <br>
+❌ Timeouts belong in API layer only
+
+Because:
+
+> Timeouts are **transport concerns**, not business logic.
+
+## 9️⃣ Stress Tests _(Do These)_
+
+- Set delay to 1s → success
+- Set delay to 10s → timeout
+- Kill backend → network error
+- Restore backend → success
+
+Your app should:
+
+- never freeze
+- always explain failure
+- recover on reload
+
+## 🔍 Day 9 Exit Criteria _(Hard Gate)_
+
+You may proceed only if:
+✅ Slow backend does not freeze UI <br> 
+✅ Timeout error is distinct <br>
+✅ AbortController is used <br>
+✅ Logs show timeout clearly <br>
+✅ You understand why backend still logs success
+
+If you don’t understand the last point — stop and think.

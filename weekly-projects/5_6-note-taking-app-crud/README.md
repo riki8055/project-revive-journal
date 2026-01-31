@@ -2767,3 +2767,216 @@ You started trusting:
 - observability
 
 This is **production-grade thinking**.
+
+# Day 11 — Server Crash Simulation
+
+**Backend Death · Network Errors · Graceful Degradation**
+
+## Objectives
+
+Ensure your frontend stays **stable, honest, and usable** when the backend crashes or becomes unreachable.
+
+This is where apps usually panic.
+Yours won’t.
+
+## 0️⃣ Reality Check _(Read This Carefully)_
+
+When a server crashes:
+
+❌ No HTTP status code <br>
+❌ No JSON <br>
+❌ No response body <br>
+❌ No headers <br>
+❌ No “error message”
+
+From the browser’s perspective:
+
+> The network failed.
+
+This is **not** the same as:
+
+- timeout
+- 500 error
+- invalid JSON
+
+This is **hard failure**.
+
+## 1️⃣ Simulate a Real Server Crash _(Backend Side)_
+
+### Kill the Server _(Purest Simulation)_
+
+In terminal running backend:
+
+```bash
+Ctrl + C
+```
+
+Backend is now **dead**. <br>
+Do NOT restart it yet.
+
+## 2️⃣ Observe the Frontend Failure _(Before Fix)_
+
+Reload frontend.
+
+What you’ll see:
+- fetch rejects
+- error like:
+    - `TypeError: Failed to fetch`
+- No HTTP response
+- No status
+- No JSON
+
+This is **expected**.
+Now we handle it **properly**.
+
+## 3️⃣ Understand the Error Shape _(Critical)_
+
+When backend is down:
+
+- `fetch()` rejects
+- Error is not an HTTP error
+- No `res.ok`
+- No `res.status`
+
+So this code:
+
+```js
+if (!res.ok) { ... }
+```
+
+👉 **never runs**.
+
+You must handle this **earlier**.
+
+## 4️⃣ Frontend: Detect Network-Level Failures
+
+> commit hash **cbd1d32**
+
+Update `notes.api.js`.
+
+### Wrap fetch call defensively
+
+```js
+try {
+  res = await fetchWithTimeout(
+    `${BASE_URL}/notes`,
+    {},
+    3000
+  );
+} catch (err) {
+  log('ERROR', 'Network failure or server down', {
+    error: err.message
+  });
+
+  throw new Error('Server is unreachable');
+}
+```
+
+Key point:
+- This catches **crash, DNS, refusal, offline**
+- This is _not_ timeout _(already handled earlier)_
+- This is **infrastructure failure**
+
+## 5️⃣ Distinguish Failure Classes _(Lock This Table)_
+
+| Failure                 | How it appears   | Who detects it |
+|-------------------------|------------------|----------------|
+| Timeout                 | AbortError       | Frontend       |
+| Server crash            | fetch reject     | Frontend       |
+| 500 error               | res.ok === false | Backend        |
+| Invalid JSON JSON.parse | JSON.parse fails | Frontend       |
+
+Your system must **not confuse these**.
+
+## 6️⃣ Frontend UX: Degrade Gracefully
+
+> commit hash **6c036e5**
+
+Update error handling (`main.js` / events):
+
+```js
+catch (err) {
+  if (err.message === 'Server is unreachable') {
+    alert('Service is temporarily unavailable. Please try again later.');
+  } else {
+    alert(err.message);
+  }
+}
+```
+
+No stack traces. <br>
+No technical jargon. <br>
+No lies.
+
+## 7️⃣ Logs Tell the Story _(This Is the Goal)_
+
+### Frontend log
+
+```js
+{
+  level: "ERROR",
+  message: "Network failure or server down",
+  error: "Failed to fetch"
+}
+```
+
+### Backend log
+
+❌ Nothing.
+
+### 🧠 Important insight:
+
+Silence from backend logs
+
+- network error on frontend <br>
+    = **server is dead**
+
+You can now diagnose this **without guessing**.
+
+## 8️⃣ Recovery Test _(Very Important)_
+
+Now restart backend:
+
+```bash
+node server.js
+```
+
+Reload frontend.
+
+Expected:
+- App works again
+- No reload logic needed
+- No state corruption
+- No manual reset
+
+This is **resilience**.
+
+## 9️⃣ Anti-Patterns to Kill Forever
+
+❌ Assuming backend always exists <br>
+❌ Treating network error as server error <br>
+❌ Retrying endlessly when server is dead <br>
+❌ Showing technical error messages to users <br>
+❌ Freezing UI on fetch rejection
+
+## 🔍 Day 11 Exit Criteria _(Hard Gate)_
+
+You may proceed only if:
+
+✅ Backend crash does NOT crash frontend <br>
+✅ Network errors are detected explicitly <br>
+✅ User sees honest message <br>
+✅ Logs clearly show server absence <br>
+✅ App recovers after backend restart
+
+If even one is missing → fix it.
+
+## 🧠 What You Learned Today _(This Is Senior-Level)_
+
+- Systems fail silently
+- Absence of response is a signal
+- Network errors ≠ application errors
+- Recovery is as important as handling failure
+
+Most apps fail here. <br>
+Yours didn’t.

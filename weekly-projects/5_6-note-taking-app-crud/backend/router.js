@@ -2,7 +2,7 @@ const { log } = require("./logger");
 const { createNote, getNotes } = require("./services/notes.service");
 const { delay } = require("./utils/delay");
 
-const SHOULD_CORRUPT = true;
+const SHOULD_CORRUPT = false;
 
 function router(req, res) {
   const { method, url } = req;

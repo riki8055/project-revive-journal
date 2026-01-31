@@ -1,6 +1,7 @@
 import { log } from "../logger.js";
 
-const BASE_URL = "http://localhost:3001";
+// const BASE_URL = "http://localhost:3001";
+const BASE_URL = "https://cfkzk3-3001.csb.app"
 
 async function fetchNotes() {
   log("INFO", "Fetching notes");

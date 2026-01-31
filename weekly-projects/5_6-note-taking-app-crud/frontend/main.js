@@ -10,8 +10,11 @@ async function initApp() {
     setNotes(notes);
     renderNotes();
   } catch (error) {
-    alert(error.message); // later -> proper UI
-    console.error(error);
+    if (error.message === "Corrupt server response") {
+      alert("Server sent invalid data. Please try again later.");
+    } else {
+      alert(err.message);
+    }
   }
 
   initEvents();

@@ -10,7 +10,7 @@ async function initApp() {
     setNotes(notes);
     renderNotes();
   } catch (error) {
-    alert("Failed to load notes");
+    alert(error.message); // later -> proper UI
     console.error(error);
   }
 

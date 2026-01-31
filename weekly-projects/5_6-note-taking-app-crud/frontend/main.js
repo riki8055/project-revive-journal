@@ -12,8 +12,10 @@ async function initApp() {
   } catch (error) {
     if (error.message === "Corrupt server response") {
       alert("Server sent invalid data. Please try again later.");
+    } else if (error.message === 'Server is unreachable') {
+      alert('Service is temporarily unavailable. Please try again later.')
     } else {
-      alert(err.message);
+      alert(error.message);
     }
   }
 

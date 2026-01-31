@@ -2512,6 +2512,7 @@ Your app should:
 ## 🔍 Day 9 Exit Criteria _(Hard Gate)_
 
 You may proceed only if:
+
 ✅ Slow backend does not freeze UI <br> 
 ✅ Timeout error is distinct <br>
 ✅ AbortController is used <br>

@@ -1,13 +1,28 @@
+import { fetchWithTimeout } from "./fetchWithTimeout.js";
 import { log } from "../logger.js";
 
 // const BASE_URL = "http://localhost:3001";
-const BASE_URL = "https://cfkzk3-3001.csb.app"
+const BASE_URL = "https://cfkzk3-3001.csb.app";
 
 async function fetchNotes() {
   log("INFO", "Fetching notes");
 
   const start = Date.now();
-  const res = await fetch(`${BASE_URL}/notes`);
+
+  let res;
+  try {
+    res = await fetchWithTimeout(
+      `${BASE_URL}/notes`,
+      {},
+      3000, // 3 seconds timeout
+    );
+  } catch (err) {
+    if (err.name === "AbortError") {
+      log("ERROR", "Fetch notes timed out");
+      throw new Error("Request timed out");
+    }
+    throw err;
+  }
 
   log("INFO", "Fetch notes response", {
     status: res.status,

@@ -14,7 +14,7 @@ async function fetchNotes() {
     res = await fetchWithTimeout(
       `${BASE_URL}/notes`,
       {},
-      3000, // 3 seconds timeout
+      10000, // 3 seconds timeout
     );
   } catch (err) {
     if (err.name === "AbortError") {

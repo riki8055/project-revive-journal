@@ -2,7 +2,7 @@ const http = require("http");
 const { router } = require("./router");
 const { log } = require("./logger");
 
-const PORT = 3000;
+const PORT = 3001;
 
 const server = http.createServer((req, res) => {
   const start = Date.now();

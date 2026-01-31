@@ -2520,3 +2520,250 @@ You may proceed only if:
 ✅ You understand why backend still logs success
 
 If you don’t understand the last point — stop and think.
+
+# Day 10 — Invalid JSON & Corrupt Responses
+
+**Trust Boundaries · Parse Defensively · Fail Gracefully**
+
+## Objectives
+
+Ensure your frontend **never crashes** and **never lies to the user** when the server returns malformed or corrupt data.
+
+## 0️⃣ The Rule of the Day _(Memorize This)_
+
+> `response.json()` is a trust boundary.
+
+Anything that crosses a trust boundary:
+
+- must be wrapped
+- must be validated
+- must be allowed to fail safely
+
+## 1️⃣ What We Will Break Today _(On Purpose)_
+
+### Backend will sometimes:
+
+- Send **invalid JSON**
+- Send **partial/corrupt JSON**
+- Send **wrong Content-Type**
+
+### Frontend must:
+
+- Detect parse failures
+- Distinguish _network_ vs _parse_ vs _server_ errors
+- Stay responsive
+- Log clearly
+
+## 2️⃣ Backend: Inject Corrupt Responses _(Controlled Chaos)_
+
+> commit hash **5277df3**
+
+In `router.js`, modify **GET /notes**.
+
+### Add a corruption switch _(temporary)_
+
+```js
+const SHOULD_CORRUPT = true;
+```
+
+Then:
+
+```js
+if (method === 'GET' && url === '/notes') {
+  const notes = getNotes();
+
+  if (SHOULD_CORRUPT) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end('{ invalid json '); // 🔥 deliberate corruption
+    return;
+  }
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(notes));
+  return;
+}
+```
+
+This simulates:
+- serialization bug
+- broken proxy
+- partial write
+- manual mistake
+
+## 3️⃣ Observe the Failure _(Before Fixing)_
+
+Reload frontend.
+
+You’ll likely see:
+- `SyntaxError: Unexpected token ...`
+- App breaks
+- UI doesn’t recover
+
+This is **normal** for naïve code.
+
+Now we fix it **properly**.
+
+## 4️⃣ Frontend: Wrap `response.json()` _(Critical Fix)_
+
+> commit hash **671fa3e**
+
+### ❌ Dangerous assumption _(old code)_
+
+```js
+return res.json();
+```
+
+### ✅ Safe parsing _(new pattern)_
+
+Update `notes.api.js`:
+
+```js
+async function safeJsonParse(response) {
+  try {
+    return await response.json();
+  } catch (err) {
+    log('ERROR', 'Invalid JSON in response', {
+      status: response.status
+    });
+    throw new Error('Corrupt server response');
+  }
+}
+```
+
+Then use it:
+
+```js
+const data = await safeJsonParse(res);
+return data;
+```
+
+Now JSON corruption is **handled**, not fatal.
+
+## 5️⃣ Distinguish Error Types _(This Is Professional)_
+
+> commit hash **9b6f74f**
+
+Modify your API logic:
+
+```js
+if (!res.ok) {
+  throw new Error('Server error');
+}
+
+let data;
+try {
+  data = await safeJsonParse(res);
+} catch (err) {
+  throw err; // already meaningful
+}
+
+return data;
+```
+
+Now frontend can distinguish:
+
+❌ timeout <br>
+❌ network failure <br>
+❌ HTTP error <br>
+❌ corrupt response
+
+Each is a **different class of failure**.
+
+## 6️⃣ Frontend UX: Honest Messaging
+
+> commit hash **095d9ba**
+
+In `main.js` or events layer:
+
+```js
+catch (err) {
+  if (err.message === 'Corrupt server response') {
+    alert('Server sent invalid data. Please try again later.');
+  } else {
+    alert(err.message);
+  }
+}
+```
+
+No lying. <br>
+No “Something went wrong” vagueness.
+
+## 7️⃣ Logging Review _(This Is the Point)_
+
+### Frontend log
+
+```js
+{
+  level: "ERROR",
+  message: "Invalid JSON in response",
+  status: 200
+}
+```
+
+### Backend log
+
+```json
+{
+  "level":"INFO",
+  "message":"Request completed",
+  "status":200
+}
+```
+
+🧠 Critical Insight:
+
+Both logs are true. <br>
+The backend thinks it succeeded.<br>
+The frontend knows the data is unusable.
+
+This is **distributed** truth.
+
+## 8️⃣ Remove Corruption Toggle _(After Test)_
+
+> commit hash **6e91023**
+
+After confirming behavior:
+
+```js
+const SHOULD_CORRUPT = false;
+```
+
+Never ship intentional corruption 😄 <br>
+But always ship **defensive parsing**.
+
+## 9️⃣ Anti-Patterns to Kill Forever
+
+❌ Blind res.json() <br>
+❌ Assuming 200 means valid <br>
+❌ Catching errors and ignoring them <br>
+❌ Console-only errors <br>
+❌ Retrying corrupt data blindly
+
+If data is corrupt → **stop, log, inform**.
+
+## 🔍 Day 10 Exit Criteria _(Hard)_
+
+You may proceed only if:
+
+✅ Corrupt JSON does not crash UI <br>
+✅ User sees clear error <br>
+✅ Logs show parse failure <br>
+✅ Backend continues running <br>
+✅ You understand why HTTP success ≠ data success
+
+If that last sentence feels obvious — good.
+It didn’t before today.
+
+## 🧠 What Changed in You Today
+
+You stopped trusting:
+- status codes
+- servers
+- “worked on my machine” 😂
+
+You started trusting:
+- contracts
+- boundaries
+- observability
+
+This is **production-grade thinking**.

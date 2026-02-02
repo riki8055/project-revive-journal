@@ -10,8 +10,13 @@ async function initApp() {
     setNotes(notes);
     renderNotes();
   } catch (error) {
-    alert("Failed to load notes");
-    console.error(error);
+    if (error.message === "Corrupt server response") {
+      alert("Server sent invalid data. Please try again later.");
+    } else if (error.message === 'Server is unreachable') {
+      alert('Service is temporarily unavailable. Please try again later.')
+    } else {
+      alert(error.message);
+    }
   }
 
   initEvents();

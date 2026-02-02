@@ -2263,3 +2263,720 @@ You started asking:
 > “What does the system say happened?”
 
 That’s the difference between **debugging** and **engineering**.
+
+# Day 9 — API Timeout Simulation
+
+**Slow Network · Hung Requests · Controlled Failure**
+
+## Objectives
+
+Teach your system to **stop waiting, report clearly**, and **recover gracefully** when the backend is slow or stuck.
+
+## 0️⃣ Core Reality Check _(Internalize This)_
+
+> HTTP has **no built-in timeout**.
+
+If the server:
+- hangs
+- delays
+- forgets to respond
+
+👉 `fetch()` will wait forever.
+
+If you don’t design for this, your UI freezes politely… forever.
+
+## 1️⃣ What We Are Simulating Today
+
+We will deliberately create:
+
+### Backend-side failures
+
+- Artificial response delay
+- Requests that take _too long_
+
+### Frontend-side defenses
+
+- Client-side timeout
+- Abort in-flight requests
+- Clear timeout error
+
+No retries yet _(Day 12)_.
+
+## 2️⃣ Backend: Introduce Artificial Latency _(Controlled Sabotage)_
+
+> commit hash **967b5e3**
+
+### Add delay utility _(backend/utils/delay.js)_
+
+```js
+// utils/delay.js
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+module.exports = { delay };
+```
+
+### Inject delay into notes route _(router.js)_
+
+At the top of `/notes` GET handler:
+
+```js
+const { delay } = require('./utils/delay');
+```
+
+Then:
+
+```js
+if (method === 'GET' && url === '/notes') {
+  (async () => {
+    await delay(5000); // ⏱ 5 seconds — intentional
+
+    const notes = getNotes();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(notes));
+  })();
+
+  return;
+}
+```
+
+🔥 This simulates:
+
+- slow database
+- congested server
+- cold start
+
+Your backend is now **hostile by design**.
+
+## 3️⃣ Observe the Failure _(Do NOT Fix Yet)_
+
+Reload frontend.
+
+What happens?
+
+- UI appears frozen
+- No feedback
+- No error
+- User confused
+
+This is **expected**. <br>
+Now we fix it **properly**.
+
+## 4️⃣ Frontend: Implement Fetch Timeout _(Correct Way)_
+
+> commit hash **2b17ae9**
+
+There is only **one correct way**: 👉 `AbortController`
+
+### Create timeout wrapper _(frontend/api/fetchWithTimeout.js)_
+
+```js
+// api/fetchWithTimeout.js
+export async function fetchWithTimeout(url, options = {}, timeout = 3000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    return response;
+  } finally {
+    clearTimeout(id);
+  }
+}
+```
+
+This gives you **real cancellation**, not fake timers.
+
+## 5️⃣ Use Timeout Wrapper in API Layer
+
+> commit hash 2bea929
+
+Update `notes.api.js`:
+
+```js
+import { fetchWithTimeout } from './fetchWithTimeout.js';
+import { log } from '../logger.js';
+
+async function fetchNotes() {
+  log('INFO', 'Fetching notes (with timeout)');
+
+  const start = Date.now();
+
+  let res;
+  try {
+    res = await fetchWithTimeout(
+      `${BASE_URL}/notes`,
+      {},
+      3000 // 3 seconds timeout
+    );
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      log('ERROR', 'Fetch notes timed out');
+      throw new Error('Request timed out');
+    }
+    throw err;
+  }
+
+  log('INFO', 'Fetch notes response', {
+    status: res.status,
+    duration: Date.now() - start
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch notes');
+  }
+
+  return res.json();
+}
+```
+
+Now:
+- frontend refuses to wait forever
+- timeout is explicit
+- error is meaningful
+
+## 6️⃣ Frontend UX: Surface Timeout Clearly
+
+> commit hash **eccbac4**
+
+In `main.js`:
+
+```js
+try {
+  const notes = await fetchNotes();
+  setNotes(notes);
+  renderNotes();
+} catch (err) {
+  alert(err.message); // later → proper UI
+}
+```
+
+Timeout message should be **distinct**, not generic.
+
+## 7️⃣ Logs Are the Real Test
+
+### Frontend log _(timeout)_
+
+```js
+{
+  level: "ERROR",
+  message: "Fetch notes timed out"
+}
+```
+
+### Backend log _(still finishes later)_
+
+```json
+{
+  "level":"INFO",
+  "message":"Request completed",
+  "duration":5002
+}
+```
+
+🧠 Insight:
+
+- Backend did its job
+- Frontend chose to stop waiting
+- Both are correct
+
+This is **distributed systems reality**.
+
+## 8️⃣ Important Rule _(Do NOT Break This)_
+
+❌ Never add timeouts in UI <br>
+❌ Never put timeouts in services <br>
+❌ Timeouts belong in API layer only
+
+Because:
+
+> Timeouts are **transport concerns**, not business logic.
+
+## 9️⃣ Stress Tests _(Do These)_
+
+- Set delay to 1s → success
+- Set delay to 10s → timeout
+- Kill backend → network error
+- Restore backend → success
+
+Your app should:
+
+- never freeze
+- always explain failure
+- recover on reload
+
+## 🔍 Day 9 Exit Criteria _(Hard Gate)_
+
+You may proceed only if:
+
+✅ Slow backend does not freeze UI <br> 
+✅ Timeout error is distinct <br>
+✅ AbortController is used <br>
+✅ Logs show timeout clearly <br>
+✅ You understand why backend still logs success
+
+If you don’t understand the last point — stop and think.
+
+# Day 10 — Invalid JSON & Corrupt Responses
+
+**Trust Boundaries · Parse Defensively · Fail Gracefully**
+
+## Objectives
+
+Ensure your frontend **never crashes** and **never lies to the user** when the server returns malformed or corrupt data.
+
+## 0️⃣ The Rule of the Day _(Memorize This)_
+
+> `response.json()` is a trust boundary.
+
+Anything that crosses a trust boundary:
+
+- must be wrapped
+- must be validated
+- must be allowed to fail safely
+
+## 1️⃣ What We Will Break Today _(On Purpose)_
+
+### Backend will sometimes:
+
+- Send **invalid JSON**
+- Send **partial/corrupt JSON**
+- Send **wrong Content-Type**
+
+### Frontend must:
+
+- Detect parse failures
+- Distinguish _network_ vs _parse_ vs _server_ errors
+- Stay responsive
+- Log clearly
+
+## 2️⃣ Backend: Inject Corrupt Responses _(Controlled Chaos)_
+
+> commit hash **5277df3**
+
+In `router.js`, modify **GET /notes**.
+
+### Add a corruption switch _(temporary)_
+
+```js
+const SHOULD_CORRUPT = true;
+```
+
+Then:
+
+```js
+if (method === 'GET' && url === '/notes') {
+  const notes = getNotes();
+
+  if (SHOULD_CORRUPT) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end('{ invalid json '); // 🔥 deliberate corruption
+    return;
+  }
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(notes));
+  return;
+}
+```
+
+This simulates:
+- serialization bug
+- broken proxy
+- partial write
+- manual mistake
+
+## 3️⃣ Observe the Failure _(Before Fixing)_
+
+Reload frontend.
+
+You’ll likely see:
+- `SyntaxError: Unexpected token ...`
+- App breaks
+- UI doesn’t recover
+
+This is **normal** for naïve code.
+
+Now we fix it **properly**.
+
+## 4️⃣ Frontend: Wrap `response.json()` _(Critical Fix)_
+
+> commit hash **671fa3e**
+
+### ❌ Dangerous assumption _(old code)_
+
+```js
+return res.json();
+```
+
+### ✅ Safe parsing _(new pattern)_
+
+Update `notes.api.js`:
+
+```js
+async function safeJsonParse(response) {
+  try {
+    return await response.json();
+  } catch (err) {
+    log('ERROR', 'Invalid JSON in response', {
+      status: response.status
+    });
+    throw new Error('Corrupt server response');
+  }
+}
+```
+
+Then use it:
+
+```js
+const data = await safeJsonParse(res);
+return data;
+```
+
+Now JSON corruption is **handled**, not fatal.
+
+## 5️⃣ Distinguish Error Types _(This Is Professional)_
+
+> commit hash **9b6f74f**
+
+Modify your API logic:
+
+```js
+if (!res.ok) {
+  throw new Error('Server error');
+}
+
+let data;
+try {
+  data = await safeJsonParse(res);
+} catch (err) {
+  throw err; // already meaningful
+}
+
+return data;
+```
+
+Now frontend can distinguish:
+
+❌ timeout <br>
+❌ network failure <br>
+❌ HTTP error <br>
+❌ corrupt response
+
+Each is a **different class of failure**.
+
+## 6️⃣ Frontend UX: Honest Messaging
+
+> commit hash **095d9ba**
+
+In `main.js` or events layer:
+
+```js
+catch (err) {
+  if (err.message === 'Corrupt server response') {
+    alert('Server sent invalid data. Please try again later.');
+  } else {
+    alert(err.message);
+  }
+}
+```
+
+No lying. <br>
+No “Something went wrong” vagueness.
+
+## 7️⃣ Logging Review _(This Is the Point)_
+
+### Frontend log
+
+```js
+{
+  level: "ERROR",
+  message: "Invalid JSON in response",
+  status: 200
+}
+```
+
+### Backend log
+
+```json
+{
+  "level":"INFO",
+  "message":"Request completed",
+  "status":200
+}
+```
+
+🧠 Critical Insight:
+
+Both logs are true. <br>
+The backend thinks it succeeded.<br>
+The frontend knows the data is unusable.
+
+This is **distributed** truth.
+
+## 8️⃣ Remove Corruption Toggle _(After Test)_
+
+> commit hash **6e91023**
+
+After confirming behavior:
+
+```js
+const SHOULD_CORRUPT = false;
+```
+
+Never ship intentional corruption 😄 <br>
+But always ship **defensive parsing**.
+
+## 9️⃣ Anti-Patterns to Kill Forever
+
+❌ Blind res.json() <br>
+❌ Assuming 200 means valid <br>
+❌ Catching errors and ignoring them <br>
+❌ Console-only errors <br>
+❌ Retrying corrupt data blindly
+
+If data is corrupt → **stop, log, inform**.
+
+## 🔍 Day 10 Exit Criteria _(Hard)_
+
+You may proceed only if:
+
+✅ Corrupt JSON does not crash UI <br>
+✅ User sees clear error <br>
+✅ Logs show parse failure <br>
+✅ Backend continues running <br>
+✅ You understand why HTTP success ≠ data success
+
+If that last sentence feels obvious — good.
+It didn’t before today.
+
+## 🧠 What Changed in You Today
+
+You stopped trusting:
+- status codes
+- servers
+- “worked on my machine” 😂
+
+You started trusting:
+- contracts
+- boundaries
+- observability
+
+This is **production-grade thinking**.
+
+# Day 11 — Server Crash Simulation
+
+**Backend Death · Network Errors · Graceful Degradation**
+
+## Objectives
+
+Ensure your frontend stays **stable, honest, and usable** when the backend crashes or becomes unreachable.
+
+This is where apps usually panic.
+Yours won’t.
+
+## 0️⃣ Reality Check _(Read This Carefully)_
+
+When a server crashes:
+
+❌ No HTTP status code <br>
+❌ No JSON <br>
+❌ No response body <br>
+❌ No headers <br>
+❌ No “error message”
+
+From the browser’s perspective:
+
+> The network failed.
+
+This is **not** the same as:
+
+- timeout
+- 500 error
+- invalid JSON
+
+This is **hard failure**.
+
+## 1️⃣ Simulate a Real Server Crash _(Backend Side)_
+
+### Kill the Server _(Purest Simulation)_
+
+In terminal running backend:
+
+```bash
+Ctrl + C
+```
+
+Backend is now **dead**. <br>
+Do NOT restart it yet.
+
+## 2️⃣ Observe the Frontend Failure _(Before Fix)_
+
+Reload frontend.
+
+What you’ll see:
+- fetch rejects
+- error like:
+    - `TypeError: Failed to fetch`
+- No HTTP response
+- No status
+- No JSON
+
+This is **expected**.
+Now we handle it **properly**.
+
+## 3️⃣ Understand the Error Shape _(Critical)_
+
+When backend is down:
+
+- `fetch()` rejects
+- Error is not an HTTP error
+- No `res.ok`
+- No `res.status`
+
+So this code:
+
+```js
+if (!res.ok) { ... }
+```
+
+👉 **never runs**.
+
+You must handle this **earlier**.
+
+## 4️⃣ Frontend: Detect Network-Level Failures
+
+> commit hash **cbd1d32**
+
+Update `notes.api.js`.
+
+### Wrap fetch call defensively
+
+```js
+try {
+  res = await fetchWithTimeout(
+    `${BASE_URL}/notes`,
+    {},
+    3000
+  );
+} catch (err) {
+  log('ERROR', 'Network failure or server down', {
+    error: err.message
+  });
+
+  throw new Error('Server is unreachable');
+}
+```
+
+Key point:
+- This catches **crash, DNS, refusal, offline**
+- This is _not_ timeout _(already handled earlier)_
+- This is **infrastructure failure**
+
+## 5️⃣ Distinguish Failure Classes _(Lock This Table)_
+
+| Failure                 | How it appears   | Who detects it |
+|-------------------------|------------------|----------------|
+| Timeout                 | AbortError       | Frontend       |
+| Server crash            | fetch reject     | Frontend       |
+| 500 error               | res.ok === false | Backend        |
+| Invalid JSON JSON.parse | JSON.parse fails | Frontend       |
+
+Your system must **not confuse these**.
+
+## 6️⃣ Frontend UX: Degrade Gracefully
+
+> commit hash **6c036e5**
+
+Update error handling (`main.js` / events):
+
+```js
+catch (err) {
+  if (err.message === 'Server is unreachable') {
+    alert('Service is temporarily unavailable. Please try again later.');
+  } else {
+    alert(err.message);
+  }
+}
+```
+
+No stack traces. <br>
+No technical jargon. <br>
+No lies.
+
+## 7️⃣ Logs Tell the Story _(This Is the Goal)_
+
+### Frontend log
+
+```js
+{
+  level: "ERROR",
+  message: "Network failure or server down",
+  error: "Failed to fetch"
+}
+```
+
+### Backend log
+
+❌ Nothing.
+
+### 🧠 Important insight:
+
+Silence from backend logs
+
+- network error on frontend <br>
+    = **server is dead**
+
+You can now diagnose this **without guessing**.
+
+## 8️⃣ Recovery Test _(Very Important)_
+
+Now restart backend:
+
+```bash
+node server.js
+```
+
+Reload frontend.
+
+Expected:
+- App works again
+- No reload logic needed
+- No state corruption
+- No manual reset
+
+This is **resilience**.
+
+## 9️⃣ Anti-Patterns to Kill Forever
+
+❌ Assuming backend always exists <br>
+❌ Treating network error as server error <br>
+❌ Retrying endlessly when server is dead <br>
+❌ Showing technical error messages to users <br>
+❌ Freezing UI on fetch rejection
+
+## 🔍 Day 11 Exit Criteria _(Hard Gate)_
+
+You may proceed only if:
+
+✅ Backend crash does NOT crash frontend <br>
+✅ Network errors are detected explicitly <br>
+✅ User sees honest message <br>
+✅ Logs clearly show server absence <br>
+✅ App recovers after backend restart
+
+If even one is missing → fix it.
+
+## 🧠 What You Learned Today _(This Is Senior-Level)_
+
+- Systems fail silently
+- Absence of response is a signal
+- Network errors ≠ application errors
+- Recovery is as important as handling failure
+
+Most apps fail here. <br>
+Yours didn’t.

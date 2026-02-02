@@ -1,12 +1,44 @@
+import { fetchWithTimeout } from "./fetchWithTimeout.js";
 import { log } from "../logger.js";
 
-const BASE_URL = "http://localhost:3000";
+// const BASE_URL = "http://localhost:3001";
+const BASE_URL = "https://cfkzk3-3001.csb.app";
+
+async function safeJsonParse(response) {
+  try {
+    return await response.json();
+  } catch (err) {
+    log("ERROR", "Invalid JSON in response", {
+      status: response.status,
+    });
+    throw new Error("Corrupt server response");
+  }
+}
 
 async function fetchNotes() {
   log("INFO", "Fetching notes");
 
   const start = Date.now();
-  const res = await fetch(`${BASE_URL}/notes`);
+
+  let res;
+  try {
+    res = await fetchWithTimeout(
+      `${BASE_URL}/notes`,
+      {},
+      10000 // 3 seconds timeout
+    );
+  } catch (err) {
+    if (err.name === "AbortError") {
+      log("ERROR", "Fetch notes timed out");
+      throw new Error("Request timed out");
+    }
+
+    log("ERROR", "Network failure or server down", {
+      error: err.message,
+    });
+
+    throw new Error("Server is unreachable");
+  }
 
   log("INFO", "Fetch notes response", {
     status: res.status,
@@ -18,7 +50,14 @@ async function fetchNotes() {
     throw new Error("Failed to fetch notes");
   }
 
-  return res.json();
+  let data;
+  try {
+    data = await safeJsonParse(res);
+  } catch (err) {
+    throw err; // already meaningful
+  }
+
+  return data;
 }
 
 async function createNote({ title, content }) {

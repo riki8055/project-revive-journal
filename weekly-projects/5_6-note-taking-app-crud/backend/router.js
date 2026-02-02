@@ -1,5 +1,8 @@
 const { log } = require("./logger");
 const { createNote, getNotes } = require("./services/notes.service");
+const { delay } = require("./utils/delay");
+
+const SHOULD_CORRUPT = false;
 
 function router(req, res) {
   const { method, url } = req;
@@ -11,9 +14,22 @@ function router(req, res) {
   }
 
   if (method === "GET" && url === "/notes") {
-    const notes = getNotes();
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(notes));
+    (async () => {
+      await delay(5000); // 5 seconds - intentional
+
+      const notes = getNotes();
+
+      if (SHOULD_CORRUPT) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end("{ invalid json "); // deliberate corruption
+
+        return;
+      }
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(notes));
+    })();
+
     return;
   }
 

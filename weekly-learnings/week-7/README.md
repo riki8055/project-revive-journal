@@ -196,3 +196,220 @@ If you can answer these **without Googling**, Day 1 is complete.
 - A **mental x-ray** of the browser
 - Ability to _predict_ performance issues
   Foundation for every optimization you’ll do next
+
+## Day 2 – Reflows & Repaints _(Hands-on Pain)_
+
+### 0️⃣ Setup _(2 minutes)_
+
+Open **any of your Bootcamp apps** _(even a simple page with a box + button)_.
+
+Open:
+- Chrome DevTools
+- Performance tab
+- Enable:
+    - ☑ Screenshots
+    - ☑ Advanced paint instrumentation
+
+### 1️⃣ Pain #1 – Layout Thrashing _(The Classic Mistake)_
+
+#### ❌ Intentionally Bad Code
+
+```js
+const box = document.querySelector('.box');
+
+for (let i = 0; i < 1000; i++) {
+  box.style.width = box.offsetWidth + 1 + 'px';
+}
+```
+
+#### What You Just Did
+
+- `offsetWidth` → **forces layout**
+- `style.width` → **invalidates layout**
+- Loop = **1000 forced reflows**
+
+#### Observe
+
+- Click Record
+- Trigger this code
+- Stop recording
+
+Look for:
+
+- Purple bars exploding
+- Long “Layout” events
+- Main thread blocked
+
+#### 🧠 Insight
+
+> The browser had no choice but to recalculate layout every iteration.
+
+## 2️⃣ Fix #1 – Batch Reads & Writes _(Respect the Pipeline)_
+
+### ✅ Fixed Code
+
+```js
+const box = document.querySelector('.box');
+
+let width = box.offsetWidth; // one read
+
+for (let i = 0; i < 1000; i++) {
+  width += 1;
+}
+
+box.style.width = width + 'px'; // one write
+```
+
+### Observe Again
+
+- Almost no layout
+- Main thread breathes
+- FPS stays stable
+
+#### 🔥 Rule Burned Into Brain
+
+> Read first. Write later. Never alternate.
+
+## 3️⃣ Pain #2 – Death by Repaint
+
+#### ❌ Bad Paint Loop
+
+```js
+const box = document.querySelector('.box');
+
+setInterval(() => {
+  box.style.backgroundColor =
+    box.style.backgroundColor === 'red' ? 'blue' : 'red';
+}, 16);
+```
+
+This repaints **~60 times/sec**.
+
+#### Observe
+
+- Paint events firing constantly
+- CPU usage rising
+- Battery crying silently
+
+## 4️⃣ Paint Flashing _(Visual Truth Serum)_
+
+### Enable Paint Flashing
+
+DevTools → More tools → Rendering →
+☑ Paint flashing
+
+Now trigger the repaint again.
+
+💥 You’ll literally see the browser flashing green.
+
+#### 🧠 Insight
+
+> Paint cost is invisible… until you make it visible.
+
+## 5️⃣ Fix #2 – Composite Instead of Paint
+
+### ❌ Paint-triggering property
+
+- `background-color`
+
+### ✅ Composite-only properties
+
+- `transform`
+- `opacity`
+
+### Fixed Example
+
+```
+box.style.transition = 'transform 0.3s';
+
+box.addEventListener('click', () => {
+  box.style.transform = 'scale(1.1)';
+});
+```
+
+Observe:
+
+- No paint flashing
+- GPU doing the work
+- Smooth animation
+
+🔥 This is why transform/opacity are sacred.
+
+## 6️⃣ Pain #3 – display vs visibility vs opacity
+
+### Try This
+
+```js
+box.style.display = 'none';
+box.style.display = 'block';
+```
+
+vs
+
+```js
+box.style.visibility = 'hidden';
+box.style.visibility = 'visible';
+```
+
+vs
+
+```js
+box.style.opacity = '0';
+box.style.opacity = '1';
+```
+
+### Observe Cost
+
+| Property    | Layout | Paint | Composite  |
+|-------------|--------|-------|------------|
+| display     | ✅      | ✅     | ❌          |
+| visibility  | ❌      | ✅     | ❌          |
+| opacity     | ❌      | ❌     | ✅          |
+
+### 🧠 Engineer Insight
+
+> `display` is a sledgehammer. `opacity` is a scalpel.
+
+## 7️⃣ The “Why” That Changes Everything
+
+### The Browser Promise
+
+- Browser tries to **delay layout**
+    - Read layout
+    - Force sync measurements
+    - Toggle structural properties
+
+When you read layout:
+
+> “Hey browser, I need accurate numbers right now.”
+
+So the browser flushes everything.
+
+## 8️⃣ Your Day 2 Mandatory Tasks
+
+### ✅ Task A – Create Layout Hell
+
+- Write a loop that alternates:
+    - style write
+    - layout read
+    - Profile it
+
+### ✅ Task B – Fix It
+- Batch reads
+- Batch writes
+- Re-profile
+
+✅ Task C – Explain _(Out Loud or Written)_
+
+Answer:
+1. Why does `offsetHeight` trigger layout?
+2. Why is `opacity` cheap?
+3. Why is layout worse than paint?
+4. Why does batching work?
+
+If you can explain it without code, you own it.
+
+## What You Gained Today
+- You felt layout cost
+- You saw paint cost
+- You learned to negotiate with the browser

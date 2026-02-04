@@ -244,9 +244,9 @@ Look for:
 
 > The browser had no choice but to recalculate layout every iteration.
 
-## 2️⃣ Fix #1 – Batch Reads & Writes _(Respect the Pipeline)_
+### 2️⃣ Fix #1 – Batch Reads & Writes _(Respect the Pipeline)_
 
-### ✅ Fixed Code
+#### ✅ Fixed Code
 
 ```js
 const box = document.querySelector('.box');
@@ -260,7 +260,7 @@ for (let i = 0; i < 1000; i++) {
 box.style.width = width + 'px'; // one write
 ```
 
-### Observe Again
+#### Observe Again
 
 - Almost no layout
 - Main thread breathes
@@ -270,7 +270,7 @@ box.style.width = width + 'px'; // one write
 
 > Read first. Write later. Never alternate.
 
-## 3️⃣ Pain #2 – Death by Repaint
+### 3️⃣ Pain #2 – Death by Repaint
 
 #### ❌ Bad Paint Loop
 
@@ -291,9 +291,9 @@ This repaints **~60 times/sec**.
 - CPU usage rising
 - Battery crying silently
 
-## 4️⃣ Paint Flashing _(Visual Truth Serum)_
+### 4️⃣ Paint Flashing _(Visual Truth Serum)_
 
-### Enable Paint Flashing
+#### Enable Paint Flashing
 
 DevTools → More tools → Rendering →
 ☑ Paint flashing
@@ -306,18 +306,18 @@ Now trigger the repaint again.
 
 > Paint cost is invisible… until you make it visible.
 
-## 5️⃣ Fix #2 – Composite Instead of Paint
+### 5️⃣ Fix #2 – Composite Instead of Paint
 
-### ❌ Paint-triggering property
+#### ❌ Paint-triggering property
 
 - `background-color`
 
-### ✅ Composite-only properties
+#### ✅ Composite-only properties
 
 - `transform`
 - `opacity`
 
-### Fixed Example
+#### Fixed Example
 
 ```
 box.style.transition = 'transform 0.3s';
@@ -335,7 +335,7 @@ Observe:
 
 🔥 This is why transform/opacity are sacred.
 
-## 6️⃣ Pain #3 – display vs visibility vs opacity
+### 6️⃣ Pain #3 – display vs visibility vs opacity
 
 ### Try This
 
@@ -358,7 +358,7 @@ box.style.opacity = '0';
 box.style.opacity = '1';
 ```
 
-### Observe Cost
+#### Observe Cost
 
 | Property    | Layout | Paint | Composite  |
 |-------------|--------|-------|------------|
@@ -366,13 +366,13 @@ box.style.opacity = '1';
 | visibility  | ❌      | ✅     | ❌          |
 | opacity     | ❌      | ❌     | ✅          |
 
-### 🧠 Engineer Insight
+#### 🧠 Engineer Insight
 
 > `display` is a sledgehammer. `opacity` is a scalpel.
 
-## 7️⃣ The “Why” That Changes Everything
+### 7️⃣ The “Why” That Changes Everything
 
-### The Browser Promise
+#### The Browser Promise
 
 - Browser tries to **delay layout**
     - Read layout
@@ -385,21 +385,21 @@ When you read layout:
 
 So the browser flushes everything.
 
-## 8️⃣ Your Day 2 Mandatory Tasks
+### 8️⃣ Your Day 2 Mandatory Tasks
 
-### ✅ Task A – Create Layout Hell
+#### ✅ Task A – Create Layout Hell
 
 - Write a loop that alternates:
     - style write
     - layout read
     - Profile it
 
-### ✅ Task B – Fix It
+#### ✅ Task B – Fix It
 - Batch reads
 - Batch writes
 - Re-profile
 
-✅ Task C – Explain _(Out Loud or Written)_
+#### ✅ Task C – Explain _(Out Loud or Written)_
 
 Answer:
 1. Why does `offsetHeight` trigger layout?
@@ -409,7 +409,7 @@ Answer:
 
 If you can explain it without code, you own it.
 
-## What You Gained Today
+### What You Gained Today
 - You felt layout cost
 - You saw paint cost
 - You learned to negotiate with the browser

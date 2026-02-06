@@ -413,3 +413,220 @@ If you can explain it without code, you own it.
 - You felt layout cost
 - You saw paint cost
 - You learned to negotiate with the browser
+
+## Day 3 – Blocking JavaScript _(Main Thread Jail)_
+
+This day is about one brutal truth:
+
+> If JavaScript is busy, the browser is frozen.
+
+No clicks. <br>
+No scroll. <br>
+No paint. <br>
+No mercy.
+
+### 1️⃣ What the Main Thread Actually Does
+
+The **main thread** is responsible for:
+- Running JavaScript
+- Handling user input
+- Calculating layout
+- Painting pixels
+
+⚠️ It can only do one thing at a time.
+
+So when JS runs:
+- Rendering pauses
+- Input waits
+- Animations stutter
+
+This is why performance isn’t about speed, it’s about **blocking time**.
+
+### 2️⃣ Pain #1 – The Innocent Loop That Kills UX
+
+#### ❌ Create a Main Thread Freeze
+
+```js
+function blockMainThread() {
+  const start = performance.now();
+  while (performance.now() - start < 3000) {
+    // simulate heavy computation for 3s
+  }
+}
+
+document.querySelector('button').addEventListener('click', blockMainThread);
+```
+
+#### What to Do
+
+- Open DevTools → **Performance**
+- Click Record
+- Click the button
+- Try scrolling or clicking elsewhere
+
+#### What You’ll See
+
+- Page completely frozen
+- Huge yellow Long Task
+- Input ignored
+
+#### 🧠 Insight
+
+> The browser didn’t “lag” — it was **obediently executing your code**.
+
+### 3️⃣ Long Tasks: The Silent Killer
+
+A **Long Task** = JS running > **50ms**
+
+Why 50ms?
+- 60fps needs a frame every ~16ms
+- Anything longer drops frames
+- UX feels sluggish immediately
+
+#### In DevTools
+
+- Yellow blocks = JS
+- Big yellow slabs = long tasks
+- Red triangle warnings = bad news
+
+### 4️⃣ Pain #2 – Blocking on Page Load
+
+#### ❌ Synchronous Load Trap
+
+```html
+<script src="heavy.js"></script>
+```
+
+Inside `heavy.js`:
+
+```js
+for (let i = 0; i < 1e8; i++) {}
+```
+
+#### Observe
+
+- Page doesn’t render
+- Blank screen
+- Browser waits for JS
+
+#### 🧠 Reality Check
+
+> HTML parsing pauses until the script finishes.
+
+### 5️⃣ Fix #1 – Defer Is Not Optional
+
+#### ✅ Correct Load Strategy
+
+```html
+<script src="heavy.js" defer></script>
+```
+
+What `defer` does:
+- HTML parses fully
+- DOM builds
+- Script runs after
+- No render blocking
+
+#### 🔥 Rule
+
+> Default to `defer`. Opt out only when necessary.
+
+### 6️⃣ Pain #3 – Heavy Click Handlers
+
+#### ❌ UI Hostage Situation
+
+```js
+button.addEventListener('click', () => {
+  for (let i = 0; i < 5e7; i++) {}
+  alert('Done');
+});
+```
+
+User clicks → app freezes → user panics.
+
+### 7️⃣ Fix #2 – Time Slicing _(Let the Browser Breathe)_
+
+#### ✅ Chunk the Work
+
+```js
+function doWork(deadline) {
+  while (deadline.timeRemaining() > 0 && tasks.length) {
+    tasks.pop()();
+  }
+
+  if (tasks.length) {
+    requestIdleCallback(doWork);
+  }
+}
+
+requestIdleCallback(doWork);
+```
+
+Alternative (simpler):
+
+```js
+function heavyTaskChunked(i = 0) {
+  if (i >= 1e7) return;
+  for (let j = 0; j < 1000; j++) {}
+  setTimeout(() => heavyTaskChunked(i + 1000));
+}
+```
+
+#### 🧠 Insight
+
+> You’re not making JS faster — you’re making it **polite**.
+
+### 8️⃣ Pain #4 – JSON Parsing Is Not Free
+
+
+❌ Hidden Cost
+
+```js
+const data = JSON.parse(hugeJSONString);
+```
+
+- Parsing happens on main thread
+- Large payload = noticeable freeze
+
+#### Fix Strategies
+
+- Smaller payloads
+- Lazy parsing
+- Web Workers _(later week)_
+
+### 9️⃣ The Performance Mindset Shift
+
+Stop asking:
+> “How fast does this function run?”
+
+Start asking:
+>“How long does this block the main thread?”
+
+That’s the only question users feel.
+
+### 🔟 Day 3 Mandatory Tasks
+
+#### ✅ Task A – Create a Long Task
+
+- Freeze the UI for 2–3 seconds
+- Record it in DevTools
+
+#### ✅ Task B – Fix It
+
+- Use `defer`
+- Chunk the work
+- Re-profile
+
+#### ✅ Task C – Answer These
+
+- Why does JS block rendering?
+- Why is 50ms a magic number?
+- Why does `defer` matter?
+- Why is “valid JS” still bad UX?
+
+If you can explain these without buzzwords—you’re thinking like an engineer.
+
+### What You Gained Today
+- You understand why apps freeze
+- You learned to respect the main thread
+- You stopped blaming the browser

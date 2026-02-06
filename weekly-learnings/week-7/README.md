@@ -630,3 +630,215 @@ If you can explain these without buzzwords—you’re thinking like an engineer.
 - You understand why apps freeze
 - You learned to respect the main thread
 - You stopped blaming the browser
+
+## Day 4 – Network Waterfalls & Load Order
+
+Day 4 is where you realize **“my JS is fast” means nothing if the network is dumb**.
+
+Today you’ll learn to **read the Network tab like an ECG** and immediately spot why a page feels slow.
+
+### 1️⃣ The Network Waterfall Is a Timeline, Not a List
+
+Most people look at:
+- File sizes
+- Status codes
+
+Engineers look at:
+- **Order**
+- **Blocking**
+- **Gaps**
+- **Dependencies**
+
+A waterfall answers one question:
+> “What stopped the browser from rendering sooner?”
+
+### 2️⃣ What Each Request Actually Goes Through
+
+Every request has stages:
+
+```text
+Queueing
+↓
+DNS Lookup
+↓
+Initial Connection (TCP)
+↓
+SSL
+↓
+Request Sent
+↓
+Waiting (TTFB)
+↓
+Content Download
+```
+
+#### 🧠 Insight
+
+> A “slow request” is often slow _before_ data even moves.
+
+### 3️⃣ Render-Blocking Resources _(The Real Villains)_
+
+#### ❌ CSS Is Render-Blocking by Default
+
+```html
+<link rel="stylesheet" href="styles.css">
+```
+
+- Browser **stops painting**
+- Waits until CSS is downloaded + parsed
+- Blank screen until done
+
+That’s why CSS order matters more than JS order.
+
+#### ❌ Synchronous JavaScript Blocks Parsing
+
+```html
+<script src="app.js"></script>
+```
+
+What happens:
+1. HTML parsing stops
+2. Script downloads
+3. Script executes
+4. Parsing resumes
+
+#### 🧠 Key Rule
+
+> HTML parsing and JS execution never happen together.
+
+### 4️⃣ Pain #1 – Create a Bad Waterfall _(On Purpose)_
+
+#### Do This
+
+- Add 3–4 large JS files
+- Load them synchronously in <head>
+- Add CSS after them
+
+```html
+<script src="a.js"></script>
+<script src="b.js"></script>
+<script src="c.js"></script>
+<link rel="stylesheet" href="styles.css">
+```
+
+#### Observe in Network Tab
+
+- Requests stacked
+- CSS arrives late
+- First paint delayed
+- White screen syndrome
+
+### 5️⃣ Fix #1 – Correct Load Order
+
+#### ✅ The Professional Default
+
+```html
+<link rel="stylesheet" href="styles.css">
+
+<script src="a.js" defer></script>
+<script src="b.js" defer></script>
+<script src="c.js" defer></script>
+```
+
+Results:
+- HTML parses immediately
+- CSS loads early
+- JS runs after DOM
+- Faster first paint
+
+#### 🔥 Rule
+
+> CSS first. JS deferred. Always.
+
+### 6️⃣ `async` vs `defer` _(No Confusion Allowed)_
+
+| Attribute | Downloads | Executes    | Order         |
+|-----------|-----------|-------------|---------------|
+| none      | blocks    | immediately | in order      |
+| async     | parallel  | ASAP        | unpredictable |
+| defer     | parallel  | after DOM   | in order      |
+
+#### 🧠 Decision Rule
+
+App logic → `defer`
+Analytics / ads → `async`
+
+### 7️⃣ Pain #2 – The TTFB Trap
+
+#### TTFB _(Time To First Byte)_
+
+Time server takes to respond
+
+Includes:
+- Server processing
+- Network latency
+
+Symptoms:
+- Long “Waiting” bar
+- Everything blocked behind it
+
+#### 🧠 Truth
+
+> Frontend can’t fix backend slowness — but must detect it.
+
+### 8️⃣ Pain #3 – Payload Size Lies
+
+Two files:
+
+- File A: 2MB but cached
+- File B: 200KB but render-blocking
+
+Which hurts more?
+
+#### 👉 File B.
+
+Because:
+- It blocks rendering
+- It’s on the critical path
+
+### 9️⃣ Critical Rendering Path Thinking
+
+Ask for every resource:
+
+1. Is it needed for first paint?
+2. Does it block HTML parsing?
+3. Does it block rendering?
+4. Can it be delayed?
+
+If “no” → defer, lazy load, or remove.
+
+### 🔟 Day 4 Mandatory Tasks
+
+#### ✅ Task A – Read a Waterfall
+
+Open any production site
+
+- Identify:
+    - First CSS request
+    - First JS execution
+    - First paint moment
+
+#### ✅ Task B – Break Your App
+
+- Delay CSS
+- Block parsing with JS
+- Record waterfall
+
+#### ✅ Task C – Fix It
+
+- Reorder assets
+- Use defer
+- Re-measure
+
+#### ✅ Task D – Answer These
+
+- Why is CSS render-blocking?
+- Why does synchronous JS stop HTML parsing?
+- Why can a small file be more expensive than a big one?
+- When should you use `async`?
+
+### What You Gained Today
+
+- You can **diagnose blank screens**
+- You understand **load order > file size**
+- You read network timelines, not numbers

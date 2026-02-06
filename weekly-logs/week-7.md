@@ -14,6 +14,16 @@
   - Reflow (layout) → expensive, cascading
   - Repaint → visual only, cheaper but frequent
 
+- Why JS blocks rendering
+- What “Main Thread” actually does
+- Script loading strategies:
+    - `defer`
+    - `async`
+- Cost of:
+    - Long loops
+    - Heavy JSON parsing
+    - Synchronous event handlers
+
 ## What confused me
 
 ## What I avoided

@@ -842,3 +842,190 @@ Open any production site
 - You can **diagnose blank screens**
 - You understand **load order > file size**
 - You read network timelines, not numbers
+
+## Day 5 – Performance Profiling Workflow
+
+Day 5 is where everything you learned stops being “concepts” and becomes a **repeatable engineering workflow**.
+
+This is how senior engineers debug performance without guessing.
+
+### 1️⃣ The Golden Rule of Performance Work
+
+> Never optimize before you can reproduce and measure.
+
+If you can’t show the slowness in DevTools, you don’t understand it yet.
+
+### 2️⃣ The 5-Step Performance Workflow _(Memorize This)_
+
+#### Step 1 – Reproduce the Slowness
+
+- Slow network _(DevTools → Network → Slow 3G)_
+- Throttle CPU _(4× or 6× slowdown)_
+- Trigger the problem _reliably_
+
+🧠 Why:
+> Fast machines hide bad engineering.
+
+#### Step 2 – Record a Performance Trace
+
+1. Open **DevTools → Performance**
+2. Enable:
+    - Screenshots
+    - Web Vitals
+3. Click **Record**
+4. Reproduce the issue
+5. Stop recording
+
+Now you have **ground truth**.
+
+#### Step 3 – Classify the Bottleneck
+
+Ask **only one question**:
+> What is consuming time on the main thread?
+
+Look at:
+
+🟨 Long JS tasks <br>
+🟪 Layout / Reflow <br>
+🟩 Paint <br>
+🌐 Network idle gaps
+
+Only **one** will dominate.
+
+#### Step 4 – Fix One Thing _(Only One)_
+
+❌ Don’t:
+
+- Refactor everything
+- Apply 10 optimizations
+- Guess
+
+✅ Do:
+
+- Target the **largest block**
+- Make the smallest change
+- Keep behavior identical
+
+#### Step 5 – Re-measure
+
+- Record again
+- Compare before vs after
+- If it didn’t move → rollback
+
+#### 🧠 Engineering maturity
+
+> Optimization without improvement is a bug.
+
+### 3️⃣ Reading the Performance Timeline Like a Pro
+
+#### Flame Chart Basics
+
+- X-axis → time
+- Y-axis → call stack depth
+- Wide bars → expensive
+- Tall stacks → nested calls
+
+Rule:
+
+> Width matters more than depth.
+
+#### Spotting Patterns
+
+| Symptoms               | Likely Cause     |
+|------------------------|------------------|
+| Big yellow slabs       | Blocking JS      |
+| Repeated purple spikes | Layout thrashing |
+| Green scattered blocks | Paint storms     |
+| Idle gaps before paint | Network delay    |
+
+### 4️⃣ Pain Exercise – End-to-End Profiling
+
+#### Step A – Break the App
+
+Choose **one**:
+
+- Heavy loop on click
+- Layout thrashing animation
+- Late-loading CSS
+
+#### Step B – Profile
+
+- Record trace
+- Screenshot timeline
+- Identify dominant cost
+
+#### Step C – Fix
+
+- Chunk JS
+- Batch DOM access
+- Reorder assets
+
+#### Step D – Prove It
+
+- Re-record
+- Show improvement
+- Write down _what_ changed
+
+### 5️⃣ The “Performance Triage” Mindset
+
+When an app feels slow, ask in this order:
+
+1. ** Is the main thread blocked?** 
+2. ** Is layout being triggered repeatedly? **
+3. ** Is paint happening too often? **
+4. ** Is network delaying first paint? **
+
+Stop at the first “yes”.
+
+### 6️⃣ Metrics That Actually Matter _(Right Now)_
+
+Ignore vanity metrics.
+
+Focus on:
+
+- ** FCP **  – When user sees _something_
+- ** LCP ** – When main content appears
+- ** TTI ** – When page responds to input
+
+🧠 Truth
+> A fast-looking app that ignores clicks is worse than a slow one.
+
+### 7️⃣ Anti-Patterns to Kill Immediately
+
+🚫 “Let’s optimize everything” <br>
+🚫 “It feels faster” <br>
+🚫 “Lighthouse score went up”
+
+✅ “Main thread blocking reduced by 400ms” <br>
+✅ “Layout calls dropped from 120 → 4”
+
+### 8️⃣ Day 5 Mandatory Tasks
+
+#### ✅ Task A – Full Profiling Run
+
+- Break your app intentionally
+- Capture performance trace
+
+#### ✅ Task B – Identify Bottleneck
+
+Answer:
+
+> What single thing is dominating the timeline?
+
+#### ✅ Task C – Fix & Verify
+
+- Apply one fix
+- Re-profile
+- Confirm improvement
+
+#### ✅ Task D – Write This Sentence
+
+> “The app was slow because ________, fixed by ________, verified by ________.”
+
+If you can write that sentence, you’re doing real performance engineering.
+
+### What You Gained Today
+
+- A systematic workflow
+- Zero-guess optimization
+- Confidence in DevTools data

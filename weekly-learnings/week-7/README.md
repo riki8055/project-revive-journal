@@ -1029,3 +1029,189 @@ If you can write that sentence, you’re doing real performance engineering.
 - A systematic workflow
 - Zero-guess optimization
 - Confidence in DevTools data
+
+## Day 6 – Performance Rules That Actually Matter
+
+Day 6 is where you **delete half the advice you’ve ever heard** and keep only what actually survives real-world pressure.
+
+This is not about tricks.
+It’s about **principles you can apply blindly and still be right**.
+
+### 1️⃣ Rule #1 – Users Don’t Experience Speed, They Experience Feedback
+
+A 2s wait with feedback feels faster than a 500ms freeze.
+
+#### Bad UX
+
+- Blank screen
+- Frozen button
+- No response
+
+#### Good UX
+
+- Skeletons
+- Disabled buttons
+- Progress indicators
+
+🧠 ** Truth **
+
+> Perceived performance beats technical performance every time.
+
+### 2️⃣ Rule #2 – Optimize the Critical Path, Ignore the Rest
+
+Critical path = what blocks:
+- First paint
+- First interaction
+
+Anything not on this path:
+
+- Can wait
+- Can load later
+- Can be lazy
+
+Ask:
+
+> “Does this help the user right now?”
+
+If no → defer.
+
+### 3️⃣ Rule #3 – Layout Is the Real Enemy
+
+From all weeks combined:
+
+- JS can be chunked
+- Network can be cached
+- ** Layout is contagious **
+
+One layout:
+
+- Triggers others
+- Blocks paint
+- Runs on main thread
+
+🧠 ** Rule **
+
+> Avoid layout-triggering properties like a plague.
+
+### 4️⃣ Rule #4 – Smooth > Fast
+
+A constant 60fps animation that takes 1.5s
+feels better than a janky 0.8s one.
+
+#### Therefore:
+
+Prefer:
+- `transform`
+- `opacity`
+
+Avoid:
+- `top/left`
+- `width/height`
+
+### 5️⃣ Rule #5 – Don’t Block Input _(Ever)_
+
+If a click:
+
+- Doesn’t respond
+- Freezes UI
+- Feels ignored
+
+The app feels broken.
+
+#### Always:
+
+- Disable buttons during work
+- Show spinners
+- Yield control to the browser
+
+#### 🧠 Golden UX Rule
+
+> An app that listens is forgiven for being slow.
+
+### 6️⃣ Rule #6 – Measure Before and After _(Or Shut Up)_
+
+If you can’t show:
+
+- A trace
+- A number
+- A before/after
+
+Then you didn’t optimize — you guessed.
+
+#### 🧠 Engineering Rule
+
+> Performance work without measurement is superstition.
+
+### 7️⃣ Rule #7 – Lighthouse Is a Tool, Not a Judge
+
+Lighthouse:
+- Is a lab test
+- Runs in isolation
+- Misses real interaction pain
+
+Use it to:
+- Catch obvious mistakes
+- Validate trends
+
+Never use it to:
+- Declare victory
+- Argue performance quality
+
+### 8️⃣ Rule #8 – Cache Is a Feature, Not a Hack
+
+A cached app:
+- Feels instant
+- Reduces network cost
+- Reduces CPU
+
+#### Examples:
+
+- HTTP cache headers
+- In-memory state
+- Avoid re-fetching
+
+#### 🧠 Rule
+
+> The fastest request is the one you don’t make.
+
+### 9️⃣ Rule #9 – Remove Before You Optimize
+
+Deleting code beats optimizing code.
+
+Remove:
+- Unused JS
+- Dead CSS
+- Unnecessary DOM
+
+🧠 ** Truth **
+
+> No code is faster than optimized code.
+
+### 🔟 Day 6 Mandatory Tasks
+
+#### ✅ Task A – Kill One Thing
+
+- Remove one unused asset / component
+- Measure improvement
+
+#### ✅ Task B – Improve Perceived Performance
+
+- Add:
+    - Skeleton
+    - Disabled button
+    - Loading text
+
+#### ✅ Task C – Write These Rules _(From Memory)_
+
+1. Why perceived performance matters
+2. Why layout is worse than JS
+3. Why smoothness beats raw speed
+4. Why measurement is mandatory
+
+If you can explain these to a junior dev, you own them.
+
+### What You Gained Today
+
+- Freedom from cargo-cult optimization
+- UX-first performance thinking
+- Confidence to say “no” to bad advice

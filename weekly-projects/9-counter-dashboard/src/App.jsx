@@ -1,10 +1,8 @@
-import './App.css'
-import Counter from './components/Counter'
+import "./App.css";
+import Dashboard from "./components/Dashboard";
 
 function App() {
-  return (
-  <Counter />
-)  
+  return <Dashboard />;
 }
 
-export default App
+export default App;

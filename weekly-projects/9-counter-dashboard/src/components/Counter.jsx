@@ -1,22 +1,11 @@
-import React, { useState } from "react";
+export default function Counter({ value, onIncrement, index }) {
+  console.log("Counter rendered:", index);
 
-function Counter() {
-  console.log("Counter function executed");
-
-  const [count, setCount] = useState(0);
-
-  return React.createElement(
-    "div",
-    null,
-    React.createElement("h2", null, "Count: ", count),
-    React.createElement(
-      "button",
-      {
-        onClick: () => setCount(count + 1),
-      },
-      "Increment",
-    ),
+  return (
+    <div style={{ margin: "10px" }}>
+      <h3>Counter {index}</h3>
+      <p>Value: {value}</p>
+      <button onClick={onIncrement}>Increment</button>
+    </div>
   );
 }
-
-export default Counter;

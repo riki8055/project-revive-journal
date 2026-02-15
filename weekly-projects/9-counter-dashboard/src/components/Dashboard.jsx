@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Counter from "./Counter";
+import CounterList from "./CounterList";
 
 export default function Dashboard() {
   console.log("Dashboard rendered");
@@ -15,14 +15,7 @@ export default function Dashboard() {
   return (
     <div>
       <h1>Counter Dashboard</h1>
-      {counters.map((count, i) => (
-        <Counter
-          key={i}
-          index={i}
-          value={count}
-          onIncrement={() => increment(i)}
-        />
-      ))}
+      <CounterList counters={counters} increment={increment} />
     </div>
   );
 }

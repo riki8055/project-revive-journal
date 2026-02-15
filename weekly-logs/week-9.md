@@ -17,6 +17,9 @@
 - Props drilling mechanics
 - Why passing functions down causes re-renders
 - Why large apps suffer from this
+- Functions are recreated on every render
+- Objects break memoization
+- Why React compares by reference
 
 ## What confused me
 

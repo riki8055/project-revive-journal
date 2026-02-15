@@ -14,6 +14,9 @@
 - How `useState` triggers re-render
 - Parent re-render → Child re-render
 - Why React doesn’t "diff smartly" by default
+- Props drilling mechanics
+- Why passing functions down causes re-renders
+- Why large apps suffer from this
 
 ## What confused me
 

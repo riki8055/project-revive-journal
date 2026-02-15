@@ -335,3 +335,262 @@ That’s why large trees get slow.
 Now think:
 
 If we had 1,000 counters…
+
+## 📅 Day 3 – Props Drilling Pain
+
+### 🎯 Objective
+
+You will understand:
+
+- How props drilling actually works
+- Why passing functions causes re-renders
+- Why deep trees become performance nightmares
+
+We’re going to create this structure:
+
+```mardown
+Dashboard
+  └── CounterList
+        └── CounterCard
+              └── CounterButton
+```
+
+State lives at the top.
+
+The button is at the bottom.
+
+And we manually pass everything through.
+
+### 🧱 Step 1 — Build the Deep Tree
+
+> commit hash **65e2f20**
+
+#### 1️⃣ Dashboard _(Top Level State)_
+
+```jsx
+// Dashboard.jsx
+
+import { useState } from "react";
+import CounterList from "./CounterList";
+
+export default function Dashboard() {
+  console.log("Dashboard rendered");
+
+  const [counters, setCounters] = useState(Array(10).fill(0));
+
+  const increment = (index) => {
+    const updated = [...counters];
+    updated[index] += 1;
+    setCounters(updated);
+  };
+
+  return (
+    <div>
+      <h1>Counter Dashboard</h1>
+      <CounterList counters={counters} increment={increment} />
+    </div>
+  );
+}
+```
+
+#### 2️⃣ CounterList _(Mid-level state, executer)_
+
+```jsx
+// CounterList.jsx
+
+import CounterCard from "./CounterCard";
+
+export default function CounterList({ counters, increment }) {
+  console.log("CounterList rendered");
+
+  return (
+    <>
+      {counters.map((count, i) => (
+        <CounterCard
+          key={i}
+          index={i}
+          value={count}
+          onIncrement={() => increment(i)}
+        />
+      ))}
+    </>
+  );
+}
+```
+
+#### 3️⃣ CounterCard _(Mid-level state)_
+
+```jsx
+// CounterCard.jsx
+
+import CounterButton from "./CounterButton";
+
+export default function CounterCard({ value, onIncrement, index }) {
+  console.log("CounterCard rendered:", index);
+
+  return (
+    <div style={{ margin: "10px", border: "1px solid gray", padding: "10px" }}>
+      <h3>Counter {index}</h3>
+      <p>Value: {value}</p>
+      <CounterButton index={index} onIncrement={onIncrement} />
+    </div>
+  );
+}
+```
+
+#### 4️⃣ CounterButton _(Bottom Level State)_
+
+```jsx
+// CounterButton.jsx
+
+export default function CounterButton({ onIncrement, index }) {
+  console.log("CounterButton rendered:", index);
+
+  return <button onClick={onIncrement}>Increment</button>;
+}
+```
+
+### 🔍 Step 2 — Click One Counter
+
+Click only Counter 4.
+
+Watch the logs.
+
+You will see:
+
+```yaml
+Dashboard rendered
+CounterList rendered
+CounterCard rendered: 0
+CounterButton rendered: 0
+CounterCard rendered: 1
+CounterButton rendered: 1
+...
+CounterCard rendered: 9
+CounterButton rendered: 9
+```
+
+Everything re-renders.
+
+Even components that did not visually change.
+
+### 🧠 Why This Happens
+
+Let’s break it:
+
+#### 1️⃣ State changed in Dashboard
+
+So Dashboard re-renders.
+
+#### 2️⃣ CounterList re-renders
+
+Because parent re-rendered.
+
+#### 3️⃣ New inline function created here:
+
+```jsx
+onIncrement={() => increment(i)}
+```
+
+This creates a NEW function for every card.
+
+Every render.
+
+New reference → React sees prop changed → child re-renders.
+
+#### 4️⃣ That new function gets passed down again
+
+So CounterButton also re-renders.
+
+### 💣 Where the Pain Is
+
+The problem is not just performance.
+
+It’s architecture pain.
+
+Look at this:
+
+Dashboard knows about increment logic.<br>
+CounterButton needs increment.
+
+But:
+
+CounterList and CounterCard don’t care about increment.
+
+Yet they must accept and pass it.
+
+That’s **props drilling**.
+
+They are just middlemen.
+
+### 😵 Imagine This In Real App
+
+Now imagine:
+
+```mathematica
+App
+ └── Layout
+      └── Sidebar
+           └── Panel
+                └── Widget
+                     └── Button
+```
+
+And the Button needs:
+
+- User info
+- Theme
+- Permissions
+- Feature flags
+- Action handlers
+
+All must be manually passed down.
+
+Every layer must know about them.
+
+That becomes messy and fragile.
+
+### 🔥 Performance Reality
+
+Even if only 1 counter changed:
+
+- All 10 CounterCard ran
+- All 10 CounterButton ran
+- 20 functions executed
+- 20 new element trees created
+
+Scaling issue.
+
+### 🧠 Key Mental Upgrade Today
+
+Rendering is contagious downward.
+
+If parent re-renders,<br>
+children re-render<br>
+unless we explicitly prevent it.
+
+React does not prevent it by default.
+
+### 🎯 Deliverable Today
+
+You must:
+
+- Build the deep tree.
+- Log render at every level.
+- Click one counter.
+- Confirm full tree re-render.
+- Understand where new references are created.
+
+Now think like a performance engineer:
+
+What if we stop children from re-rendering<br>
+when their props haven’t changed?
+
+This is where `React.memo` comes into action.
+
+But before that…
+
+Answer this:
+
+If we removed the inline arrow function and passed `increment` directly,<br>
+would everything still re-render?

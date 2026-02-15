@@ -189,3 +189,149 @@ or<br>
 B) Call the component again and create a new element tree?
 
 Think like a systems engineer now.
+
+## 📅 Day 2 – State & Re-render Reality
+
+### 🎯 Objective
+
+Understand:
+
+- `useState` triggers re-render
+- Parent re-render → all children re-render
+- React does NOT “skip smartly” by default
+
+We’ll intentionally create a performance problem.
+
+### 🧱 Step 1 — Build 10 Counters Inside One Parent
+
+> commit hash **78f5e62**
+
+Put all state in the parent.
+
+```jsx
+// Dashboard.jsx
+
+import { useState } from "react";
+import Counter from "./Counter";
+
+export default function Dashboard() {
+  console.log("Dashboard rendered");
+
+  const [counters, setCounters] = useState(Array(10).fill(0));
+
+  const increment = (index) => {
+    const updated = [...counters];
+    updated[index] += 1;
+    setCounters(updated);
+  };
+
+  return (
+    <div>
+      <h1>Counter Dashboard</h1>
+      {counters.map((count, i) => (
+        <Counter
+          key={i}
+          index={i}
+          value={count}
+          onIncrement={() => increment(i)}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+### 🔍 Step 2 — Observe Console Logs
+
+Open DevTools → Console.
+
+Now click **only Counter 3**.
+
+What happens?
+
+You will see:
+
+```yaml
+Dashboard rendered
+Counter rendered: 0
+Counter rendered: 1
+Counter rendered: 2
+Counter rendered: 3
+Counter rendered: 4
+...
+Counter rendered: 9
+```
+
+ALL counters re-render.
+
+Even though you changed only one.
+
+### 🧠 Why This Happens
+
+Because:
+
+1. `setCounters()` updates parent state.
+2. Parent re-renders.
+3. Parent function runs again.
+4. It recreates all `<Counter />` elements.
+5. React calls all Counter functions again.
+
+React does NOT automatically say:
+
+> “Only counter 3 changed.”
+
+By default, it just re-runs everything under that parent.
+
+### ⚠️ Important Detail
+
+Even though only one counter changed visually:
+
+- All 10 Counter functions executed.
+- 10 new element objects were created.
+- 10 sets of props were recreated.
+
+React still optimizes DOM updates —
+but function execution already happened.
+
+That’s the performance cost.
+
+### 💣 The Hidden Problem
+
+This line is especially dangerous:
+
+```jsx
+onIncrement={() => increment(i)}
+```
+
+Every render:
+
+- A new function is created
+- New reference
+- React sees prop changed
+- Child re-renders
+
+We’ll attack this later.
+
+### 🧠 Mental Model Upgrade
+
+Rendering cost = Function execution cost<br>
+Not just DOM updates.
+
+DOM may update minimally,<br>
+but JavaScript work still happens fully.
+
+That’s why large trees get slow.
+
+### 🔥 Your Task Now
+
+1. Build this exactly.
+2. Add logs.
+3. Click one counter.
+4. Confirm:
+
+- Dashboard re-renders.
+- All 10 counters re-render.
+
+Now think:
+
+If we had 1,000 counters…

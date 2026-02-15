@@ -11,6 +11,9 @@
 - Virtual DOM mental model
 - Why components are just functions
 - Why re-renders happen
+- How `useState` triggers re-render
+- Parent re-render → Child re-render
+- Why React doesn’t "diff smartly" by default
 
 ## What confused me
 

@@ -593,4 +593,174 @@ But before that…
 Answer this:
 
 If we removed the inline arrow function and passed `increment` directly,<br>
-would everything still re-render?
+would everything still re-render? _(answered in Day 4)_
+
+## Day 4 – Why Everything Re-renders
+
+### 🧠 First — What’s Causing Re-renders Right Now?
+
+Currently you have:
+
+```jsx
+onIncrement={() => increment(i)}
+```
+
+Every render:
+
+- A NEW function is created.
+- New reference.
+- Prop changes.
+- Child re-renders.
+
+That part is clear.
+
+### 🔥 Now Let’s Remove the Inline Arrow
+
+> commit hash **a9fda21**
+
+Suppose we change `CounterList` like this:
+
+```jsx
+<CounterCard key={i} index={i} value={count} onIncrement={increment} />
+```
+
+And inside `CounterCard`:
+
+```jsx
+<CounterButton index={index} onIncrement={() => increment(index)} />
+```
+
+We moved the inline function down.
+
+Will everything still re-render?
+
+YES.
+
+Why?
+
+Because the parent (`Dashboard`) still re-renders.
+
+### 🧠 Core Rule of React
+
+When a component re-renders:
+
+👉 All of its children re-render too<br>
+unless they are memoized.
+
+React does NOT check:
+
+> “Are props same?”
+
+It simply calls the child again.
+
+So even if you pass:
+
+```jsx
+increment = { increment };
+```
+
+And the function reference didn’t change…
+
+React will still execute:
+
+```js
+CounterList();
+CounterCard();
+CounterButton();
+```
+
+Because parent re-rendered.
+
+No optimization by default.
+
+### 🔬 Important Distinction
+
+There are two separate concepts:
+
+#### 1️⃣ Re-render because parent re-rendered
+
+This always happens by default.
+
+#### 2️⃣ Re-render because prop reference changed
+
+This matters only when using `React.memo`.
+
+Right now, we are NOT using memo.
+
+So React doesn’t even check props.
+
+It just re-runs the function.
+
+### ⚙️ What Actually Happens Internally
+
+When `setCounters` runs:
+
+1. Dashboard runs again.
+2. It returns new JSX.
+3. React sees `<CounterList />`
+4. React calls `CounterList()` again.
+5. React sees `<CounterCard />`
+6. React calls `CounterCard()` again.
+7. And so on.
+
+React is not doing prop comparison here.
+
+It simply executes the tree.
+
+### 🔥 The Inline Function Is Not the Root Cause _(Yet)_
+
+It makes things worse,<br>
+but even without it,<br>
+everything still re-renders.
+
+The inline function becomes a problem when we introduce:
+
+```
+React.memo
+```
+
+Because then prop reference comparison matters.
+
+We haven’t introduced that weapon yet.
+
+### 🧠 Mental Model Upgrade
+
+Default React behavior:
+
+```css
+Parent re-render
+→ All children re-render
+→ All grandchildren re-render
+```
+
+Unless you explicitly block it.
+
+React is simple, not magical.
+
+### 🧨 So Why Does React Feel Efficient?
+
+Because although functions re-run:
+
+- React’s reconciliation avoids unnecessary DOM updates.
+- DOM mutation is expensive.
+- Function execution is cheaper _(but not free)_.
+
+So small trees feel fast.
+
+Large trees start choking.
+
+### 🎯 Final Answer
+
+If you remove inline arrow functions and pass increment directly:
+
+✔ Parent re-renders<br>
+✔ All children re-render<br>
+✔ All functions execute again
+
+Because React does not prevent child renders by default.
+
+Now we’re ready for the real question:
+
+If we wrap `CounterCard` with `React.memo`…
+
+Will everything still re-render?

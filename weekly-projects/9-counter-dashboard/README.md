@@ -1,6 +1,6 @@
 # Counter Dashboard
 
-## 🧠 Day 1 – JSX → JavaScript _(No Magic Allowed)_
+## 📅 Day 1 – JSX → JavaScript _(No Magic Allowed)_
 
 ### 🎯 Objective
 

@@ -1,6 +1,7 @@
+import React from "react";
 import CounterButton from "./CounterButton";
 
-export default function CounterCard({ value, onIncrement, index }) {
+export default React.memo(function CounterCard({ value, onIncrement, index }) {
   console.log("CounterCard rendered:", index);
 
   return (
@@ -10,4 +11,4 @@ export default function CounterCard({ value, onIncrement, index }) {
       <CounterButton index={index} onIncrement={onIncrement} />
     </div>
   );
-}
+});

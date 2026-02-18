@@ -6,7 +6,12 @@ export default function CounterList({ counters, increment }) {
   return (
     <>
       {counters.map((count, i) => (
-        <CounterCard key={i} index={i} value={count} increment={increment} />
+        <CounterCard
+          key={i}
+          index={i}
+          value={count}
+          onIncrement={() => increment(i)}
+        />
       ))}
     </>
   );

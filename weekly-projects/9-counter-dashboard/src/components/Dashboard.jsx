@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import CounterList from "./CounterList";
 
 export default function Dashboard() {
@@ -6,11 +6,13 @@ export default function Dashboard() {
 
   const [counters, setCounters] = useState(Array(10).fill(0));
 
-  const increment = (index) => {
-    const updated = [...counters];
-    updated[index] += 1;
-    setCounters(updated);
-  };
+  const increment = useCallback((index) => {
+    setCounters((prev) => {
+      const updated = [...prev];
+      updated[index] += 1;
+      return updated;
+    });
+  }, []);
 
   return (
     <div>

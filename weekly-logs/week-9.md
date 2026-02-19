@@ -20,9 +20,14 @@
 - Functions are recreated on every render
 - Objects break memoization
 - Why React compares by reference
+- `React.memo`
+- `useCallback`
+- When memoization actually works
+- When it’s useless
 
 ## What confused me
 
 ## What I avoided
+- `useMemo`
 
 ## What I will do next week

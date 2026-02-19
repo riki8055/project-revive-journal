@@ -764,3 +764,284 @@ Now we’re ready for the real question:
 If we wrap `CounterCard` with `React.memo`…
 
 Will everything still re-render?
+
+## 📅 Day 5 – `React.memo` & `useCallback`
+
+### 🎯 Objective
+
+We will:
+- Stop unnecessary re-renders
+- Understand referential equality
+- Make **only the changed counter re-render**
+
+### 🧠 Step 0 — Current Problem Recap
+
+Right now:
+- Clicking Counter 3
+- Causes Dashboard to re-render
+- Causes CounterList to re-render
+- Causes all 10 CounterCard to re-render
+- Causes all 10 CounterButton to re-render
+
+Because:
+- Parent re-renders
+- Children re-run by default
+- Inline functions create new references
+
+We will now surgically fix this.
+
+### 🛡 Step 1 — Add `React.memo` to `CounterCard`
+
+> commit hash **54c6df9**
+
+Modify:
+
+```jsx
+function CounterCard({ value, onIncrement, index }) {
+  console.log("CounterCard rendered:", index);
+
+  return (
+    <div>
+      <h3>Counter {index}</h3>
+      <p>Value: {value}</p>
+      <CounterButton
+        index={index}
+        onIncrement={onIncrement}
+      />
+    </div>
+  );
+}
+```
+
+Change to:
+
+```jsx
+const CounterCard = React.memo(function CounterCard({ value, onIncrement, index }) {
+  console.log("CounterCard rendered:", index);
+
+  return (
+    <div>
+      <h3>Counter {index}</h3>
+      <p>Value: {value}</p>
+      <CounterButton
+        index={index}
+        onIncrement={onIncrement}
+      />
+    </div>
+  );
+});
+```
+
+Now React will:
+- Compare previous props vs new props
+- If same _(by reference for objects/functions)_
+- Skip re-render
+
+### 🔥 Test It
+
+Click Counter 3.
+
+You will notice:
+
+👉 It still re-renders ALL counters.
+
+Why?
+
+Because this prop is unstable:
+
+```jsx
+onIncrement={() => increment(i)}
+```
+
+That arrow function creates a new function every render.
+
+New reference → memo fails.
+
+### ⚙️ Step 2 — Stabilize `increment` With `useCallback`
+
+> commit hash **a6e06f6**
+
+Inside Dashboard:
+
+Replace:
+
+```jsx
+const increment = (index) => {
+  const updated = [...counters];
+  updated[index] += 1;
+  setCounters(updated);
+};
+```
+
+With:
+
+```jsx
+const increment = React.useCallback((index) => {
+  setCounters(prev => {
+    const updated = [...prev];
+    updated[index] += 1;
+    return updated;
+  });
+}, []);
+```
+
+Important:
+
+We used functional state update (`prev =>`). <br>
+So we don't depend on `counters`. <br>
+Dependency array is safe as `[]`.
+
+Now `increment` has a stable reference.
+
+### ⚙️ Step 3 — Remove Inline Arrow in CounterList
+
+Change:
+
+```jsx
+onIncrement={() => increment(i)}
+```
+
+To:
+
+```jsx
+onIncrement={increment}
+```
+
+Then modify CounterCard:
+
+```jsx
+<CounterButton
+  index={index}
+  onIncrement={() => onIncrement(index)}
+/>
+```
+
+Wait — that still creates a function.
+
+So instead, move responsibility down.
+
+### ✅ Clean Version _(Correct Architecture)_
+
+#### Dashboard
+
+```jsx
+const increment = React.useCallback((index) => {
+  setCounters(prev => {
+    const updated = [...prev];
+    updated[index] += 1;
+    return updated;
+  });
+}, []);
+```
+
+#### CounterList
+
+```jsx
+<CounterCard
+  key={i}
+  index={i}
+  value={count}
+  increment={increment}
+/>
+```
+
+#### CounterCard _(memoized)_
+
+```jsx
+const CounterCard = React.memo(function CounterCard({ value, increment, index }) {
+  console.log("CounterCard rendered:", index);
+
+  return (
+    <div>
+      <h3>Counter {index}</h3>
+      <p>Value: {value}</p>
+      <CounterButton
+        index={index}
+        increment={increment}
+      />
+    </div>
+  );
+});
+```
+
+#### CounterButton _(memoized too)_
+
+> commit hash **ab81c26**
+
+```jsx
+const CounterButton = React.memo(function CounterButton({ increment, index }) {
+  console.log("CounterButton rendered:", index);
+
+  return (
+    <button onClick={() => increment(index)}>
+      Increment
+    </button>
+  );
+});
+```
+Notice:
+- `increment` reference is stable
+- `value` changes only for one counter
+- Other counters receive identical props
+- Memo now works
+
+### 🔬 Now Test Again
+
+Click Counter 4.
+
+You should see:
+
+```yaml
+Dashboard rendered
+CounterCard rendered: 4
+CounterButton rendered: 4
+```
+
+Only the changed one.
+
+That’s the breakthrough moment.
+
+### 🧠 Why This Works
+
+`React.memo` performs shallow comparison:
+
+For each prop:
+- Primitives → compared by value
+- Objects/functions → compared by reference
+
+Now:
+- `increment` is stable
+- `index` is same
+- `value` changes only for one
+
+So only that card re-renders.
+
+### ⚠️ Important Truth
+
+Memoization is NOT free.
+
+It adds comparison overhead.
+
+Use it when:
+- Component is heavy
+- Tree is large
+- Props are stable
+
+Avoid when:
+- Component is tiny
+- Props always change
+- Optimization not needed
+
+### 🧨 The Big Mental Shift
+
+Before:
+> React randomly re-renders.
+
+Now:
+> React re-renders when references change.
+
+That’s senior-level React thinking.
+
+Now:
+
+Confirm — does only one counter re-render on your side?

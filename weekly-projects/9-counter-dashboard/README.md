@@ -1240,3 +1240,298 @@ Profiler is how seniors debug that.
 Then tell me:
 
 What was the render duration before and after?
+
+## 📅 Day 7 – Refactor Like a Pro
+
+### 🎯 Objective
+
+Architect the 10-counter dashboard cleanly while understanding:
+
+- Lifting state vs Local state
+- When to split components
+- When to use Context
+- When NOT to use memoization
+
+We’ll evolve the project instead of just optimizing it.
+
+### 🧠 Step 1 — Question the Architecture
+
+Right now:
+
+```</> Code
+Dashboard
+ └── CounterList
+       └── CounterCard
+             └── CounterButton
+```
+
+State is lifted to `Dashboard`.
+
+Question:<br>
+👉 Do all counters really need to share one array state?
+
+If counters are independent…
+
+Then lifting state may be unnecessary.
+
+This is your first architectural decision point.
+
+### 🔥 Refactor #1 — Move State Into Each Counter
+
+> commit hash **0569f60**
+
+Instead of:
+
+```js
+const [counters, setCounters] = useState(Array(10).fill(0));
+```
+
+We do:
+
+```js
+function CounterCard({ index }) {
+  const [count, setCount] = React.useState(0);
+
+  console.log("CounterCard rendered:", index);
+
+  return (
+    <div>
+      <h3>Counter {index}</h3>
+      <p>Value: {count}</p>
+      <button onClick={() => setCount((c) => c + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+
+Now Dashboard becomes:
+
+```js
+export default function Dashboard() {
+  return (
+    <div>
+      <h1>Counter Dashboard</h1>
+      {Array.from({ length: 10 }).map((_, i) => (
+        <CounterCard key={i} index={i} />
+      ))}
+    </div>
+  );
+}
+```
+
+### 🧠 What Just Happened?
+
+When you click Counter 3:
+
+Only Counter 3 re-renders.
+
+Because:
+
+- State lives locally.
+- Parent doesn't re-render.
+- No prop drilling.
+- No memo needed.
+
+Architecture solved the problem.
+
+Not memoization.
+
+This is senior thinking.
+
+### 🧠 Lesson 1 — Lifting State vs Local State
+
+Lift state only when:
+
+- Multiple components need shared data
+- You need to aggregate values
+- You need coordinated updates
+
+Keep state local when:
+
+- Component logic is isolated
+- No cross-communication required
+
+### 🔥 Refactor #2 — Add a Global “Reset All” Button
+
+> commit hash **505f622**
+
+Now we create a real reason to lift state.
+
+Add in Dashboard:
+
+```js
+const [resetSignal, setResetSignal] = React.useState(0);
+
+<button onClick={() => setResetSignal((r) => r + 1)}>Reset All</button>;
+```
+
+Then in CounterCard:
+
+```js
+React.useEffect(() => {
+  setCount(0);
+}, [resetSignal]);
+```
+
+Now state coordination exists.
+
+This is a valid lifting case.
+
+### 🧠 Lesson 2 — When to Use Context
+
+Imagine instead:
+
+- Theme
+- Auth user
+- Permissions
+
+Passing these through:
+
+```js
+Dashboard → CounterList → CounterCard → CounterButton
+```
+
+That’s unnecessary drilling.
+
+Use Context when:
+
+- Data is truly global
+- Many distant components need it
+- Prop drilling becomes noisy
+
+Do NOT use Context for:
+
+- Local UI state
+- Performance fixes
+- Avoiding simple prop passing
+
+Context causes re-render for all consumers when value changes.
+
+It is not a performance tool.
+
+### 🔥 Lesson 3 — When NOT to Use Memo
+
+Memo is useful when:
+
+- Parent re-renders frequently
+- Child is expensive
+- Props are stable
+
+Do NOT use memo when:
+
+- Component is tiny
+- Props always change
+- You are trying to “feel optimized”
+
+Overusing memo:
+
+- Adds comparison cost
+- Makes code harder to reason about
+
+Architecture > memo.
+
+Always.
+
+### 🧠 Final Clean Version _(Architected)_
+
+If counters are independent:
+
+#### Dashboard.jsx
+
+```jsx
+// Dashboard.jsx
+
+import { useState } from "react";
+import CounterCard from "./CounterCard";
+
+export default function Dashboard() {
+  const [resetSignal, setResetSignal] = useState(0);
+
+  console.log("Dashboard rendered");
+
+  return (
+    <div>
+      <h1>Counter Dashboard</h1>
+      {Array.from({ length: 10 }).map((_, i) => (
+        <CounterCard key={i} index={i} resetSignal={resetSignal} />
+      ))}
+
+      <button onClick={() => setResetSignal((r) => r + 1)}>Reset All</button>
+    </div>
+  );
+}
+```
+
+#### CounterCard.jsx
+
+```jsx
+// CounterCard.jsx
+
+import { useState, useEffect } from "react";
+
+export default function CounterCard({ index, resetSignal }) {
+  useEffect(() => {
+    setCount(0);
+  }, [resetSignal]);
+
+  const [count, setCount] = useState(0);
+
+  console.log("CounterCard rendered:", index);
+
+  return (
+    <div style={{ margin: "10px", border: "1px solid gray", padding: "10px" }}>
+      <h3>Counter {index}</h3>
+      <p>Value: {count}</p>
+      <button onClick={() => setCount((c) => c + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+
+No memo.<br>
+No useCallback.<br>
+No drilling.<br>
+Clean.
+
+### 🧠 The Deep Understanding You Now Have
+
+Rendering is simple:
+
+- State change → component re-runs
+- Parent re-render → children re-run
+- React compares trees
+- DOM updates minimally
+
+Performance issues come from:
+
+- Unnecessary lifting of state
+- Unstable references
+- Over-shared state
+- Deep drilling
+
+Not from React being magical.
+
+🔥 Final Mental Shift
+
+Junior thinking:<br>
+“How do I stop re-renders?”
+
+Senior thinking:<br>
+“Why is this state here in the first place?”
+
+That’s architecture.
+
+You just completed:
+
+Week 9 – React Without Magic.
+
+Now question yourself:
+
+If tomorrow we had 10,000 counters,
+
+Which version scales better:
+
+- Lifted state + memo
+- Local state per counter
+
+Think like a system designer.

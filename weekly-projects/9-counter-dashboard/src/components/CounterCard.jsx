@@ -1,6 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function CounterCard({ index }) {
+export default function CounterCard({ index, resetSignal }) {
+  useEffect(() => {
+    setCount(0);
+  }, [resetSignal]);
+
   const [count, setCount] = useState(0);
 
   console.log("CounterCard rendered:", index);

@@ -770,6 +770,7 @@ Will everything still re-render?
 ### 🎯 Objective
 
 We will:
+
 - Stop unnecessary re-renders
 - Understand referential equality
 - Make **only the changed counter re-render**
@@ -777,6 +778,7 @@ We will:
 ### 🧠 Step 0 — Current Problem Recap
 
 Right now:
+
 - Clicking Counter 3
 - Causes Dashboard to re-render
 - Causes CounterList to re-render
@@ -784,6 +786,7 @@ Right now:
 - Causes all 10 CounterButton to re-render
 
 Because:
+
 - Parent re-renders
 - Children re-run by default
 - Inline functions create new references
@@ -804,10 +807,7 @@ function CounterCard({ value, onIncrement, index }) {
     <div>
       <h3>Counter {index}</h3>
       <p>Value: {value}</p>
-      <CounterButton
-        index={index}
-        onIncrement={onIncrement}
-      />
+      <CounterButton index={index} onIncrement={onIncrement} />
     </div>
   );
 }
@@ -816,23 +816,25 @@ function CounterCard({ value, onIncrement, index }) {
 Change to:
 
 ```jsx
-const CounterCard = React.memo(function CounterCard({ value, onIncrement, index }) {
+const CounterCard = React.memo(function CounterCard({
+  value,
+  onIncrement,
+  index,
+}) {
   console.log("CounterCard rendered:", index);
 
   return (
     <div>
       <h3>Counter {index}</h3>
       <p>Value: {value}</p>
-      <CounterButton
-        index={index}
-        onIncrement={onIncrement}
-      />
+      <CounterButton index={index} onIncrement={onIncrement} />
     </div>
   );
 });
 ```
 
 Now React will:
+
 - Compare previous props vs new props
 - If same _(by reference for objects/functions)_
 - Skip re-render
@@ -877,7 +879,7 @@ With:
 
 ```jsx
 const increment = React.useCallback((index) => {
-  setCounters(prev => {
+  setCounters((prev) => {
     const updated = [...prev];
     updated[index] += 1;
     return updated;
@@ -904,16 +906,13 @@ onIncrement={() => increment(i)}
 To:
 
 ```jsx
-onIncrement={increment}
+onIncrement = { increment };
 ```
 
 Then modify CounterCard:
 
 ```jsx
-<CounterButton
-  index={index}
-  onIncrement={() => onIncrement(index)}
-/>
+<CounterButton index={index} onIncrement={() => onIncrement(index)} />
 ```
 
 Wait — that still creates a function.
@@ -926,7 +925,7 @@ So instead, move responsibility down.
 
 ```jsx
 const increment = React.useCallback((index) => {
-  setCounters(prev => {
+  setCounters((prev) => {
     const updated = [...prev];
     updated[index] += 1;
     return updated;
@@ -937,28 +936,24 @@ const increment = React.useCallback((index) => {
 #### CounterList
 
 ```jsx
-<CounterCard
-  key={i}
-  index={i}
-  value={count}
-  increment={increment}
-/>
+<CounterCard key={i} index={i} value={count} increment={increment} />
 ```
 
 #### CounterCard _(memoized)_
 
 ```jsx
-const CounterCard = React.memo(function CounterCard({ value, increment, index }) {
+const CounterCard = React.memo(function CounterCard({
+  value,
+  increment,
+  index,
+}) {
   console.log("CounterCard rendered:", index);
 
   return (
     <div>
       <h3>Counter {index}</h3>
       <p>Value: {value}</p>
-      <CounterButton
-        index={index}
-        increment={increment}
-      />
+      <CounterButton index={index} increment={increment} />
     </div>
   );
 });
@@ -972,14 +967,12 @@ const CounterCard = React.memo(function CounterCard({ value, increment, index })
 const CounterButton = React.memo(function CounterButton({ increment, index }) {
   console.log("CounterButton rendered:", index);
 
-  return (
-    <button onClick={() => increment(index)}>
-      Increment
-    </button>
-  );
+  return <button onClick={() => increment(index)}>Increment</button>;
 });
 ```
+
 Notice:
+
 - `increment` reference is stable
 - `value` changes only for one counter
 - Other counters receive identical props
@@ -1006,10 +999,12 @@ That’s the breakthrough moment.
 `React.memo` performs shallow comparison:
 
 For each prop:
+
 - Primitives → compared by value
 - Objects/functions → compared by reference
 
 Now:
+
 - `increment` is stable
 - `index` is same
 - `value` changes only for one
@@ -1023,11 +1018,13 @@ Memoization is NOT free.
 It adds comparison overhead.
 
 Use it when:
+
 - Component is heavy
 - Tree is large
 - Props are stable
 
 Avoid when:
+
 - Component is tiny
 - Props always change
 - Optimization not needed
@@ -1035,9 +1032,11 @@ Avoid when:
 ### 🧨 The Big Mental Shift
 
 Before:
+
 > React randomly re-renders.
 
 Now:
+
 > React re-renders when references change.
 
 That’s senior-level React thinking.
@@ -1045,3 +1044,199 @@ That’s senior-level React thinking.
 Now:
 
 Confirm — does only one counter re-render on your side?
+
+## 📅 Day 6 – Performance Profiling
+
+### 🎯 Objective
+
+Use **React DevTools Profiler** to:
+
+- See what actually re-renders
+- Understand **Render phase vs Commit phase**
+- Measure cost before and after memoization
+
+No assumptions. Only data.
+
+### 🛠 Step 1 — Install React DevTools
+
+If not installed:
+
+- Chrome → Extensions
+- Install **React Developer Tools**
+
+After installing:
+
+- Open DevTools
+- You’ll see a **“⚛️ Profiler”** tab
+
+### 🧠 Step 2 — Understand the Two Phases
+
+When React updates:
+
+#### 1️⃣ Render Phase
+
+- React calls your component functions
+- Creates new element tree
+- Compares with previous tree
+- Pure JavaScript work
+
+#### 2️⃣ Commit Phase
+
+- React updates the real DOM
+- Applies changes
+- Triggers layout / paint in browser
+
+Render = computation<br>
+Commit = DOM mutation
+
+Profiling shows both.
+
+### 🔥 Step 3 — Profile BEFORE Optimization
+
+Temporarily remove:
+
+- `React.memo`
+- `useCallback`
+
+Go back to the “bad” version.
+
+Now:
+
+1. Open Profiler tab
+2. Click **Record**
+3. Click Counter 3
+4. Stop recording
+
+### 🔍 What You’ll See
+
+You’ll see a **Flamegraph**.
+
+Each bar represents:
+
+- A component
+- Width = render time
+- Height = component hierarchy
+
+You will likely see:
+
+```</> Code
+Dashboard
+  CounterList
+    CounterCard x10
+      CounterButton x10
+```
+
+All highlighted.<br>
+Because all rendered.
+
+### 🧠 Important Observations
+
+Look for:
+
+- Total render duration _(top right)_
+- How many components re-rendered
+- Which components were “wasted renders”
+
+You’ll see:
+
+> 10 CounterCard re-rendered<br>
+> 10 CounterButton re-rendered
+
+Even though only one changed.
+
+That’s measurable waste.
+
+### 🚀 Step 4 — Now Profile AFTER Optimization
+
+Restore:
+
+- `React.memo`
+- `useCallback`
+- Stable references
+
+Now repeat:
+
+1. Click Record
+2. Click Counter 3
+3. Stop
+
+### 🔥 What Should Change
+
+Flamegraph now shows:
+
+```</> Code
+Dashboard
+  CounterCard (only one)
+    CounterButton (only one)
+```
+
+Other counters are greyed out or not highlighted.<br>
+Total render time drops.<br>
+You just proved optimization worked.
+
+### 🧠 How to Read Flamegraph Properly
+
+- Yellow / bright bars → rendered
+- Grey → skipped
+- Wide bars → expensive
+- Narrow bars → cheap
+
+Click a component to see:
+
+- Why it rendered
+- Which props changed
+
+This is extremely powerful.
+
+### ⚠️ Important Engineering Insight
+
+You may notice:
+
+Dashboard still re-renders.
+
+That’s normal.
+
+We cannot stop that because state lives there.
+
+Optimization goal:<br>
+👉 Stop unnecessary child renders.
+
+Not eliminate parent render.
+
+### 🧠 Render vs Commit Insight
+
+You’ll likely see:
+
+- Render phase longer
+- Commit phase very small
+
+This proves:
+
+- JavaScript execution cost matters
+- even if DOM updates are minimal.
+
+This connects directly to Week 3 _(Browser Performance)_.
+
+### 💣 Real-World Insight
+
+If instead of 10 counters you had:
+
+- 500 rows in a table
+- 200 chat messages
+- 100 product cards
+
+Unnecessary re-renders become visible lag.
+
+Profiler is how seniors debug that.
+
+🎯 Your Task Now
+
+1. Profile before memo.
+2. Profile after memo.
+3. Compare total render time.
+4. Count how many components re-rendered.
+5. Confirm difference.
+
+Then tell me:
+
+What was the render duration before and after?

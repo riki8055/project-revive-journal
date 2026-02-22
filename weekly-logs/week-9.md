@@ -2,7 +2,7 @@
 
 ## What I built
 
-- Counter Dashboard
+<a href="https://github.com/riki8055/project-revive-journal/tree/main/weekly-projects/9-counter-dashboard">10-Counter Dashboard</a>
 
 ## What I learned
 
@@ -27,6 +27,10 @@
 - Flamegraph reading
 - Commit phase vs render phase
 - Measuring real cost
+- Lifting state vs local state
+- When to split components
+- When to use Context
+- When NOT to use memoization
 
 ## What confused me
 
@@ -35,3 +39,5 @@
 - `useMemo`
 
 ## What I will do next week
+
+Week 10 - State Management Pain

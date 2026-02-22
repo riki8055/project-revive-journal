@@ -24,10 +24,14 @@
 - `useCallback`
 - When memoization actually works
 - When it’s useless
+- Flamegraph reading
+- Commit phase vs render phase
+- Measuring real cost
 
 ## What confused me
 
 ## What I avoided
+
 - `useMemo`
 
 ## What I will do next week

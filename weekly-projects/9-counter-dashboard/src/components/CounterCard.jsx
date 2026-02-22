@@ -1,14 +1,15 @@
-import React from "react";
-import CounterButton from "./CounterButton";
+import { useState } from "react";
 
-export default React.memo(function CounterCard({ value, increment, index }) {
+export default function CounterCard({ index }) {
+  const [count, setCount] = useState(0);
+
   console.log("CounterCard rendered:", index);
 
   return (
     <div style={{ margin: "10px", border: "1px solid gray", padding: "10px" }}>
       <h3>Counter {index}</h3>
-      <p>Value: {value}</p>
-      <CounterButton index={index} increment={increment} />
+      <p>Value: {count}</p>
+      <button onClick={() => setCount((c) => c + 1)}>Increment</button>
     </div>
   );
-});
+}

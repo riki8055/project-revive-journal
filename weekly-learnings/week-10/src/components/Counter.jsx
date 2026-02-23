@@ -2,18 +2,15 @@ import { useState } from "react";
 
 export default function Counter() {
   const [count, setCount] = useState(0);
-  const [doubleCount, setDoubleCount] = useState(0);
-  const [isEven, setIsEven] = useState(true);
 
   const handleIncrement = () => {
     setCount(count + 1);
 
-    // Update related states separately
-    setDoubleCount((count + 1) * 2);
-    setIsEven((count + 1) % 2 === 0);
-
     console.log("Count right after set:", count);
   };
+
+  const doubleCount = count * 2;
+  const isEven = count % 2 === 0;
 
   return (
     <div>

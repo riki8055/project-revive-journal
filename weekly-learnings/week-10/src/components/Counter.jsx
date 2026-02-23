@@ -4,9 +4,7 @@ export default function Counter() {
   const [count, setCount] = useState(0);
 
   const handleIncrement = () => {
-    setCount(count + 1);
-
-    console.log("Count right after set:", count);
+    setCount((prev) => prev + 1);
   };
 
   const doubleCount = count * 2;

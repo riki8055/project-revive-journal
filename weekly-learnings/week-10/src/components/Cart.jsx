@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
+
+  useEffect(() => {
+    const total = cartItems.reduce((sum, item) => sum + item.price, 0);
+    setTotalPrice(total);
+  }, [cartItems]);
 
   const addItem = () => {
     const newItem = {
@@ -14,7 +19,7 @@ export default function Cart() {
     setCartItems(updatedCart);
 
     // Manually sync total
-    setTotalPrice(totalPrice + newItem.price);
+    // setTotalPrice(totalPrice + newItem.price);
   };
 
   const removeItem = (id) => {

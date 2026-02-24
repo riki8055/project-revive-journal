@@ -1,8 +1,9 @@
 import "./App.css";
 import Counter from "./components/Counter";
+import Cart from "./components/Cart";
 
 function App() {
-  return <Counter />;
+  return <Cart />;
 }
 
 export default App;

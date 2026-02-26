@@ -1,15 +1,17 @@
 import { useEffect } from "react";
 
 export default function InfiniteLoop() {
-  const obj = { count: 1 };
+  const logSomething = () => {
+    console.log("Hello");
+  };
 
   useEffect(() => {
     console.log("Effect running...");
-  }, [obj]);
+  }, [logSomething]);
 
   return (
     <div>
-      <h1>{obj.count}</h1>
+      <h1>Hello</h1>
     </div>
   );
 }

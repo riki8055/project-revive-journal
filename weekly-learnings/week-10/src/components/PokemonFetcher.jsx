@@ -4,18 +4,14 @@ export default function PokemonFetcher() {
   const [pokemon, setPokemon] = useState(null);
   const [name, setName] = useState("pikachu");
 
-  const fetchPokemon = () => {
+  useEffect(() => {
     fetch(`https://pokeapi.co/api/v2/pokemon/${name}`)
       .then((res) => res.json())
       .then((data) => {
         console.log("Fetched...");
         setPokemon(data);
       });
-  };
-
-  useEffect(() => {
-    fetchPokemon();
-  }, [fetchPokemon]);
+  }, [name]);
 
   return (
     <div>

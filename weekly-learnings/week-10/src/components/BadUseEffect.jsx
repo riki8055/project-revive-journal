@@ -1,17 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function InfiniteLoop() {
-  const logSomething = () => {
-    console.log("Hello");
-  };
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
-    console.log("Effect running...");
-  }, [logSomething]);
+    setCount((prev) => prev + 1);
+  }, []);
 
   return (
     <div>
-      <h1>Hello</h1>
+      <h1>{count}</h1>
     </div>
   );
 }

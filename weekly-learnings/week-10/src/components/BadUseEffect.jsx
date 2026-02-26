@@ -6,7 +6,7 @@ export default function InfiniteLoop() {
   useEffect(() => {
     console.log("Effect running...");
     setCount(count + 1);
-  });
+  }, []);
 
   return (
     <div>

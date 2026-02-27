@@ -6,11 +6,11 @@ export default function Timer() {
   useEffect(() => {
     const interval = setInterval(() => {
       console.log("Count inside interval:", count);
-      setCount((prev) => prev + 1);
+      setCount(count + 1);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [count]);
 
   return (
     <div>

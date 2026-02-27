@@ -3,9 +3,10 @@ import Counter from "./components/Counter";
 import Cart from "./components/Cart";
 import InfiniteLoop from "./components/BadUseEffect";
 import PokemonFetcher from "./components/PokemonFetcher";
+import Timer from "./components/Time";
 
 function App() {
-  return <PokemonFetcher />;
+  return <Timer />;
 }
 
 export default App;

@@ -665,4 +665,229 @@ Build a component that:
 Rules:
 - You must break it first.
 - You must explain why it broke.
-- You must fix it without removing logic.
+- You must fix it without removing logic
+
+## The fetch API
+
+We’ll use the real PokéAPI.
+
+Now we’re moving from toy examples to real-world failure.
+
+Today you will:
+1. Fetch real Pokémon data
+2. Accidentally create an infinite loop
+3. Understand exactly why
+4. Fix it correctly
+
+### 🧨 Step 1 — Build It the Wrong Way
+
+> commit hash **33d0851**
+
+Create this component:
+
+```jsx
+import { useEffect, useState } from "react";
+
+export default function PokemonFetcher() {
+  const [pokemon, setPokemon] = useState(null);
+
+  useEffect(() => {
+    fetch("https://pokeapi.co/api/v2/pokemon/pikachu")
+      .then(res => res.json())
+      .then(data => {
+        console.log("Fetched...");
+        setPokemon(data);
+      });
+  });
+
+  return (
+    <div>
+      <h1>Pokemon Fetcher</h1>
+      {pokemon && <h2>{pokemon.name}</h2>}
+    </div>
+  );
+}
+```
+
+### 🔥 What Happens?
+
+Open DevTools → Network tab.
+
+You’ll see:
+- Continuous API calls
+- Console spam
+- Browser working hard
+- You just DDoS’d Pikachu.
+
+### 🧠 Why It Broke _(Deep Explanation)_
+
+Let’s walk the loop:
+1. Component renders
+2. `useEffect` runs (no dependency array)
+3. Fetch runs
+4. `setPokemon(data)` runs
+5. State updates → re-render
+6. Re-render → effect runs again
+7. Repeat forever
+
+The problem is not fetch.
+
+The problem is:
+
+> You are updating state inside an effect that runs after every render.
+
+### 💣 Step 2 — The Basic Fix
+
+Add dependency array:
+
+```jsx
+useEffect(() => {
+  fetch("https://pokeapi.co/api/v2/pokemon/pikachu")
+    .then(res => res.json())
+    .then(data => {
+      setPokemon(data);
+    });
+}, []);
+```
+
+Now it runs only once.
+
+Why?
+
+Because empty array = run after mount only.
+
+### ⚠️ Step 3 — Now Let’s Break It Again _(More Realistic)_
+
+Let’s make it dynamic:
+
+```jsx
+import { useEffect, useState } from "react";
+
+export default function PokemonFetcher() {
+  const [pokemon, setPokemon] = useState(null);
+  const [name, setName] = useState("pikachu");
+
+  const fetchPokemon = () => {
+    fetch(`https://pokeapi.co/api/v2/pokemon/${name}`)
+      .then(res => res.json())
+      .then(data => {
+        setPokemon(data);
+      });
+  };
+
+  useEffect(() => {
+    fetchPokemon();
+  }, [fetchPokemon]);
+
+  return (
+    <div>
+      <input value={name} onChange={e => setName(e.target.value)} />
+      {pokemon && <h2>{pokemon.name}</h2>}
+    </div>
+  );
+}
+```
+
+### 🔥 What Happens Now?
+
+Infinite loop again.
+
+Even though we added dependencies.
+
+Why?
+
+### 🧠 The Real Reason
+
+This line:
+
+```jsx
+const fetchPokemon = () => { ... }
+```
+
+Creates a NEW function on every render.
+
+Dependency array checks by reference.
+
+Every render:
+- New function
+- Dependency changed
+- Effect runs
+- State updates
+- Re-render
+- New function
+- Repeat
+
+The loop isn’t magical.<br>
+It’s reference instability.
+
+### ✅ Proper Fix #1 — Move Logic Inside Effect
+
+> commit hash **f886dd1**
+
+Simplest fix:
+
+```jsx
+useEffect(() => {
+  fetch(`https://pokeapi.co/api/v2/pokemon/${name}`)
+    .then(res => res.json())
+    .then(data => {
+      setPokemon(data);
+    });
+}, [name]);
+```
+
+Now:
+- Effect depends on name
+- Changing input triggers fetch
+- No function dependency
+- Stable behavior
+
+### ✅ Proper Fix #2 — useCallback _(Advanced Option)_
+
+> commit hash **f3763d2**
+
+If you must keep function outside:
+
+```jsx
+import { useCallback } from "react";
+
+const fetchPokemon = useCallback(() => {
+  fetch(`https://pokeapi.co/api/v2/pokemon/${name}`)
+    .then(res => res.json())
+    .then(data => {
+      setPokemon(data);
+    });
+}, [name]);
+
+useEffect(() => {
+  fetchPokemon();
+}, [fetchPokemon]);
+```
+
+Now:
+- Function reference is stable
+- Effect runs only when name changes
+
+### 🧠 Mental Model You Just Built
+
+useEffect runs when:
+- Component renders AND
+- At least one dependency reference changes
+
+Objects/functions are unstable unless memoized.
+
+### 🚨 Real Engineering Insight
+
+Most infinite loops in production come from:
+- Functions in dependency array
+- Objects in dependency array
+- Derived state syncing
+- Updating state inside effect without guarding
+
+Not from “React bugs.”
+
+### 🎯 Now Your Turn
+
+Answer this:
+
+Why is moving fetchPokemon inside useEffect usually better than wrapping it with useCallback?

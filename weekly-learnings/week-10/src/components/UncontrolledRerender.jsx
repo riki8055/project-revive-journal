@@ -1,8 +1,12 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 
-const ChildA = React.memo(function ChildA({ label, onClick }) {
+const ChildA = React.memo(function ChildA({ label, onClick, config }) {
   console.log("Child A rendered");
-  return <button onClick={onClick}>{label}</button>;
+  return (
+    <button onClick={onClick} style={{ backgroundColor: config.color }}>
+      {label}
+    </button>
+  );
 });
 
 function ChildB() {
@@ -17,6 +21,12 @@ function ChildC() {
 
 export default function Parent() {
   const [count, setCount] = useState(0);
+  const config = useMemo(
+    () => ({
+      color: "red",
+    }),
+    [],
+  );
 
   const handleClick = useCallback(() => {
     console.log("clicked");
@@ -28,7 +38,7 @@ export default function Parent() {
       <button onClick={() => setCount(count + 1)}>Increment</button>
 
       <div>
-        <ChildA label="Static Label" onClick={handleClick} />
+        <ChildA label="Static Label" onClick={handleClick} config={config} />
         <ChildB />
         <ChildC />
       </div>

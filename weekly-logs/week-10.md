@@ -7,6 +7,9 @@
 - State updates are async.
 - State should be grouped logically.
 - Multiple `useState` ≠ scalable architecture.
+- Never store derived state.
+- Compute it during render.
+- React re-renders for a reason.
 
 ## What confused me
 

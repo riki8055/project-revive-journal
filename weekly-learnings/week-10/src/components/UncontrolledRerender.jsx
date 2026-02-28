@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 
 const ChildA = React.memo(function ChildA({ label, onClick }) {
   console.log("Child A rendered");
@@ -18,9 +18,9 @@ function ChildC() {
 export default function Parent() {
   const [count, setCount] = useState(0);
 
-  function handleClick() {
+  const handleClick = useCallback(() => {
     console.log("clicked");
-  }
+  }, []);
 
   return (
     <div>

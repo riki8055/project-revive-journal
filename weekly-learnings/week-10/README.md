@@ -428,3 +428,241 @@ itemCount state
 Everything must be derived.
 
 Build it. Break it. Then explain what changed in your mental model.
+
+## Day 3 — useEffect Infinite Loops _(Controlled Chaos)_
+
+Today you will intentionally crash your app.
+
+Not because React is broken. Because your mental model is.
+
+### 🧨 Step 1 — Create the Infinite Loop
+
+> commit hash **74ee671**
+
+Build this:
+
+```jsx
+import { useEffect, useState } from "react";
+
+export default function InfiniteLoop() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    console.log("Effect running...");
+    setCount(count + 1);
+  });
+
+  return (
+    <div>
+      <h1>{count}</h1>
+    </div>
+  );
+}
+```
+
+### 🔥 What Happens?
+
+Your screen explodes. CPU spikes. Console floods.
+
+Why?
+
+Let’s break it logically.
+
+
+### 🧠 The Loop Mechanism
+
+1. Component renders.
+2. useEffect runs.
+3. `setCount` updates state.
+4. State change triggers re-render.
+5. Re-render triggers effect again.
+6. Repeat forever.
+
+No dependency array = run after every render.
+
+And you're causing a render inside the effect.
+
+Loop.
+
+### 💥 Step 2 — “Fix” It _(Basic Fix)_
+
+> commit hash **bfd94ec**
+
+Now add:
+
+```js
+useEffect(() => {
+  console.log("Effect running...");
+  setCount(count + 1);
+}, []);
+```
+
+What happens now?
+
+It runs once.
+
+Why?
+
+Because empty dependency array = run only after first mount.
+
+### ⚠️ But This Is Still Wrong
+
+You are still using:
+
+```js
+setCount(count + 1);
+```
+
+Inside an effect with `[]`.
+
+What is `count` here?
+
+It’s 0. Forever.
+
+Because the effect captured the initial render value.
+
+You just created a stale closure without knowing.
+
+### 🧨 Step 3 — Break It With Dependencies
+
+Now do this:
+
+```js
+useEffect(() => {
+  console.log("Effect running...");
+  setCount(count + 1);
+}, [count]);
+```
+
+What happens?
+
+
+Infinite loop again.
+
+Why?
+
+Because:
+- count changes
+- effect runs
+- effect changes count
+- repeat
+
+You told React:
+> Whenever count changes, change count.
+
+That’s logical recursion.
+
+### 🧠 Core Lesson #1
+
+Effects should not update a value they depend on unless you guard it.
+
+### 💣 Step 4 — Break It With Objects
+
+> commit hash **f761505**
+
+Now try this:
+
+```jsx
+const obj = { value: 1 };
+
+useEffect(() => {
+  console.log("Effect running...");
+}, [obj]);
+```
+
+No state updates.
+
+Still runs every render.
+
+Why?
+
+Because:
+
+```js
+const obj = { value: 1 };
+```
+
+Creates a new object on every render.
+
+Objects are compared by reference. New reference = dependency changed.
+
+💣 Step 5 — Break It With Functions
+
+> commit hash **16f3336**
+
+```js
+const logSomething = () => {
+  console.log("Hello");
+};
+
+useEffect(() => {
+  console.log("Effect running...");
+}, [logSomething]);
+```
+
+Same problem.
+
+Functions are recreated every render. New reference. Dependency changes. Effect runs again.
+
+### 🧠 Core Lesson #2 — Stability Matters
+
+React dependency array checks by reference.
+
+Primitive values:
+- number
+- string
+- boolean
+
+These are stable if unchanged.
+
+Objects & functions:
+- New reference each render
+- Unstable by default
+
+### 🧠 Proper Mental Model of useEffect
+
+useEffect is NOT:
+- Lifecycle magic
+- Auto sync system
+- State manager
+
+It is:
+> A synchronization tool with external systems.
+
+Examples:
+- Fetching data
+- Subscribing to events
+- Timers
+- DOM APIs
+
+Not for:
+- Derived state
+- Simple calculations
+- State mirroring
+
+### 🔥 Controlled Correct Example
+
+> commit hash **c21c3ba**
+
+Proper increment-once example:
+
+```jsx
+useEffect(() => {
+  setCount(prev => prev + 1);
+}, []);
+```
+
+Or better — don’t even use effect if unnecessary.
+
+### 🎯 Now Your Task
+
+Build a component that:
+1. Fetches fake data (use setTimeout instead of real API)
+2. Stores it in state
+3. Accidentally causes infinite loop
+4. Fix it properly
+
+Rules:
+- You must break it first.
+- You must explain why it broke.
+- You must fix it without removing logic.

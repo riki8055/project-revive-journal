@@ -4,9 +4,10 @@ import Cart from "./components/Cart";
 import InfiniteLoop from "./components/BadUseEffect";
 import PokemonFetcher from "./components/PokemonFetcher";
 import Timer from "./components/Time";
+import Parent from "./components/UncontrolledRerender";
 
 function App() {
-  return <Timer />;
+  return <Parent />;
 }
 
 export default App;

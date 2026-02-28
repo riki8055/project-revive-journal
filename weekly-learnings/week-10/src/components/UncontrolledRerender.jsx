@@ -1,9 +1,9 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
-function ChildA({ label }) {
+const ChildA = React.memo(function ChildA({ label }) {
   console.log("Child A rendered");
   return <h2>{label}</h2>;
-}
+});
 
 function ChildB() {
   console.log("Child B rendered");

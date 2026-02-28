@@ -222,3 +222,209 @@ Answer these without Googling:
 2. Why did calling `setCount(count + 1)` twice only increment once?
 3. Why is derived state dangerous?
 4. What does “state is a snapshot” mean?
+
+## Day 2 — Derived State Trap
+
+Today we build a cart system the wrong way.
+
+You will create a bug that feels small…
+but scales into production nightmares.
+
+### 🧨 Step 1 — Build It the Wrong Way
+
+> commit hash **e6f2628**
+
+Create this:
+
+```jsx
+import { useState } from "react";
+
+export default function Cart() {
+  const [cartItems, setCartItems] = useState([]);
+  const [totalPrice, setTotalPrice] = useState(0);
+
+  const addItem = () => {
+    const newItem = {
+      id: Date.now(),
+      price: 100
+    };
+
+    const updatedCart = [...cartItems, newItem];
+    setCartItems(updatedCart);
+
+    // Manually sync total
+    setTotalPrice(totalPrice + newItem.price);
+  };
+
+  return (
+    <div>
+      <h2>Total: ₹{totalPrice}</h2>
+      <button onClick={addItem}>Add Item (₹100)</button>
+      <p>Items: {cartItems.length}</p>
+    </div>
+  );
+}
+```
+
+### 🔎 Looks Fine… Right?
+
+Click “Add Item” 3 times.
+
+Total updates. Everything looks clean.
+
+Now let’s break it.
+
+### 💣 Step 2 — Introduce a Remove Feature
+
+> commit hash
+
+Add this:
+
+```jsx
+const removeItem = (id) => {
+  const updatedCart = cartItems.filter(item => item.id !== id);
+  setCartItems(updatedCart);
+
+  // ❌ Intentionally forget to update totalPrice
+};
+```
+
+Update UI
+
+```jsx
+{cartItems.map(item => (
+  <div key={item.id}>
+    ₹{item.price}
+    <button onClick={() => removeItem(item.id)}>Remove</button>
+  </div>
+))}
+```
+
+### 🚨 Now Test It
+
+1. Add 3 items → Total = 300
+2. Remove 1 item
+
+What happens?
+
+Items count drops. Total remains 300.
+
+Your UI is lying.
+
+This is derived state damage.
+
+### 🧠 What Just Happened?
+
+You created:
+
+- `cartItems` _(source of truth)_
+- `totalPrice` _(mirror of truth)_
+
+Now you must remember to sync:
+- Add
+- Remove
+- Update quantity
+- Apply discount
+- Clear cart
+
+Miss one.<br>
+Bug.<br>
+This scales horribly in real apps.
+
+### 🔥 Step 3 — The Fake “Fix” Most Devs Use
+
+> commit hash **ce55892**
+
+They do this:
+
+```jsx
+useEffect(() => {
+  const total = cartItems.reduce((sum, item) => sum + item.price, 0);
+  setTotalPrice(total);
+}, [cartItems]);
+```
+Now you have:
+- Extra re-render
+- Effect dependency risk
+- More moving parts
+- More complexity
+
+You’re solving a problem that shouldn't exist.
+
+### 🧠 The Correct Architecture
+
+> commit hash **8593750**
+
+Delete this:
+
+```js
+const [totalPrice, setTotalPrice] = useState(0);
+```
+
+Replace with:
+
+```js
+const totalPrice = cartItems.reduce(
+  (sum, item) => sum + item.price,
+  0
+);
+```
+
+That’s it.
+
+Single source of truth.
+
+Now:
+- Add works
+- Remove works
+- Update works
+- Clear works
+- No sync logic
+- No effects needed
+
+### ⚡ Why This Is Superior
+
+React re-renders when `cartItems` changes.
+
+During render:
+
+```
+UI = f(cartItems)
+```
+
+Pure. Predictable. Consistent.
+
+### 🧠 Engineering Principle You Just Learned
+
+Never store:
+- Totals
+- Lengths
+- Filters
+- Formatted strings
+- Boolean checks
+
+If they can be computed from state.
+
+Store minimal data. Derive everything else.
+
+### 🎯 Your Task
+
+Now extend this cart:
+
+Add:
+- Quantity per item
+- Increment quantity button
+- Decrement quantity button
+
+But:
+
+You are NOT allowed to create:
+
+```
+totalPrice state
+itemCount state
+```
+
+Everything must be derived.
+
+Build it. Break it. Then explain what changed in your mental model.

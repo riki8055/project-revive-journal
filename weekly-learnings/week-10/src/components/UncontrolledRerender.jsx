@@ -1,8 +1,8 @@
 import { useState } from "react";
 
-function ChildA() {
+function ChildA({ label }) {
   console.log("Child A rendered");
-  return <h2>Child A</h2>;
+  return <h2>{label}</h2>;
 }
 
 function ChildB() {
@@ -23,7 +23,7 @@ export default function Parent() {
       <h1>Count: {count}</h1>
       <button onClick={() => setCount(count + 1)}>Increment</button>
 
-      <ChildA />
+      <ChildA label="Static Label" />
       <ChildB />
       <ChildC />
     </div>

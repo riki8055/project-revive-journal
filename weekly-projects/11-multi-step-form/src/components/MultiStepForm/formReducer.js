@@ -17,6 +17,7 @@ export const initialState = {
       years: "",
     },
   },
+  errors: {},
 };
 
 export function formReducer(state, action) {
@@ -41,6 +42,12 @@ export function formReducer(state, action) {
 
     case "GO_TO_STEP":
       return { ...state, currentStep: action.step };
+
+    case "SET_ERRORS":
+      return {
+        ...state,
+        errors: action.errors,
+      };
 
     default:
       return state;

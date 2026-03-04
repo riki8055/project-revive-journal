@@ -6,7 +6,7 @@ export function validatePersonal(data) {
   }
 
   if (!data.lastName.trim()) {
-    errors.lastName = "First name is required";
+    errors.lastName = "Last name is required";
   }
 
   if (!data.email.includes("@")) {

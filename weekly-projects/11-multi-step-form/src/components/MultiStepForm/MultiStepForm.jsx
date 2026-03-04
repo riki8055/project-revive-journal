@@ -3,6 +3,7 @@ import { formReducer, initialState } from "./formReducer";
 import StepPersonal from "./StepPersonal";
 import StepEducation from "./StepEducation";
 import StepExperience from "./StepExperience";
+import StepReview from "./StepReview";
 
 export default function MultiStepForm() {
   const [state, dispatch] = useReducer(formReducer, initialState);
@@ -18,6 +19,8 @@ export default function MultiStepForm() {
         return (
           <StepExperience data={formData.experience} dispatch={dispatch} />
         );
+      case 4:
+        return <StepReview data={formData} dispatch={dispatch} />;
       default:
         return null;
     }
@@ -32,7 +35,7 @@ export default function MultiStepForm() {
           <button onClick={() => dispatch({ type: "PREV_STEP" })}>Back</button>
         )}
 
-        {currentStep < 3 && (
+        {currentStep < 4 && (
           <button onClick={() => dispatch({ type: "NEXT_STEP" })}>Next</button>
         )}
       </div>

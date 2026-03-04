@@ -1,6 +1,9 @@
+import { useRef } from "react";
 import { checkEmailExists } from "./fakeAPI";
 
 export default function StepPersonal({ data, dispatch, errors }) {
+  const requestIdRef = useRef(0);
+
   async function handleChange(e) {
     dispatch({
       type: "UPDATE_FIELD",
@@ -10,7 +13,12 @@ export default function StepPersonal({ data, dispatch, errors }) {
     });
 
     if (e.target.name === "email") {
+      const requestId = ++requestIdRef.current;
       const exists = await checkEmailExists(e.target.value);
+
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
 
       if (exists) {
         dispatch({

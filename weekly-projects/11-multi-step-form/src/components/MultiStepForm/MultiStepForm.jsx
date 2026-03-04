@@ -4,6 +4,7 @@ import StepPersonal from "./StepPersonal";
 import StepEducation from "./StepEducation";
 import StepExperience from "./StepExperience";
 import StepReview from "./StepReview";
+import { validatePersonal } from "./validatePersonal";
 
 export default function MultiStepForm() {
   const [state, dispatch] = useReducer(formReducer, initialState);
@@ -26,6 +27,19 @@ export default function MultiStepForm() {
     }
   }
 
+  function handleNext() {
+    if (state.currentStep === 1) {
+      const errors = validatePersonal(formData.personal);
+
+      if (Object.keys(errors).length > 0) {
+        dispatch({ type: "SET_ERRORS", errors });
+        return;
+      }
+    }
+
+    dispatch({ type: "NEXT_STEP" });
+  }
+
   return (
     <>
       {renderStep()}
@@ -35,9 +49,7 @@ export default function MultiStepForm() {
           <button onClick={() => dispatch({ type: "PREV_STEP" })}>Back</button>
         )}
 
-        {currentStep < 4 && (
-          <button onClick={() => dispatch({ type: "NEXT_STEP" })}>Next</button>
-        )}
+        {currentStep < 4 && <button onClick={handleNext}>Next</button>}
       </div>
     </>
   );

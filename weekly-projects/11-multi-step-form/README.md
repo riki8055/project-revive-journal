@@ -339,3 +339,316 @@ Then test:
 - Jump steps
 
 If it feels stable — Day 1 is complete.
+
+## ⚠️ Day 2 – Validation Hell _(Sync + Async)_
+
+Your form now has:
+
+- Personal Info
+- Education
+- Experience
+- Review
+
+Today we add validation mainly to **Personal Info**:
+
+1. Synchronous validation
+2. Async validation _(fake API)_
+3. Introduce a race condition
+4. Fix the race condition properly
+
+### 🧠 Step 1 — Add Error State
+
+> commit hash **83926a1**
+
+We must store validation errors somewhere.
+
+Extend your reducer state.
+
+```js
+const initialState = {
+  currentStep: 1,
+  formData: {
+    personal: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+    },
+    education: {
+      degree: "",
+      university: "",
+      year: "",
+    },
+    experience: {
+      company: "",
+      role: "",
+      years: "",
+    },
+  },
+  errors: {},
+};
+```
+
+Example errors:
+
+```
+errors = {
+  firstName: "Required",
+  email: "Invalid email",
+  password: "Weak password"
+}
+```
+
+### 🧩 Reducer Action
+
+Add:
+
+```js
+case "SET_ERRORS":
+  return {
+    ...state,
+    errors: action.errors
+  }
+```
+
+### 🧠 Step 2 — Synchronous Validation
+
+> commit hash **b76119d**
+
+Create a validator.
+
+```js
+// validatePersonal.js
+
+function validatePersonal(data) {
+  const errors = {};
+
+  if (!data.firstName.trim()) {
+    errors.firstName = "First name is required";
+  }
+
+  if (!data.email.includes("@")) {
+    errors.email = "Invalid email";
+  }
+
+  if (data.password.length < 6) {
+    errors.password = "Password must be 6+ characters";
+  }
+
+  return errors;
+}
+```
+
+### 🧩 Use It Before Moving to Next Step
+
+Modify **Next button logic**.
+
+```js
+function handleNext() {
+  if (state.currentStep === 1) {
+    const errors = validatePersonal(state.formData.personal);
+
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: "SET_ERRORS", errors });
+      return;
+    }
+  }
+
+  dispatch({ type: "NEXT_STEP" });
+}
+```
+
+Now your form prevents progression if invalid.
+
+### 🧾 Show Errors in StepPersonal
+
+> commit hash **49f8c7c**
+
+Example:
+
+```js
+function StepPersonal({ data, errors, dispatch }) {
+  ...
+}
+```
+
+Input example:
+
+```js
+<input name="firstName" value={data.firstName} onChange={handleChange} />;
+
+{
+  errors.firstName && <p>{errors.firstName}</p>;
+}
+```
+
+Now validation appears in UI.
+
+🧠 Step 3 — Async Validation _(Fake API)_
+
+> commit hash **17d96ce**
+
+Now simulate checking if email already exists.
+
+Fake API:
+
+```js
+// fakeAPI.js
+
+function checkEmailExists(email) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const takenEmails = ["test@gmail.com", "admin@gmail.com"];
+      resolve(takenEmails.includes(email));
+    }, 1000);
+  });
+}
+```
+
+Usage:
+
+```js
+const exists = await checkEmailExists(email);
+```
+
+If true → email already used.
+
+### 💣 Step 4 — Introduce the Race Condition
+
+Add async validation on **email typing**.
+
+Inside `handleChange`:
+
+```js
+async function handleChange(e) {
+  dispatch({
+    type: "UPDATE_FIELD",
+    section: "personal",
+    field: e.target.name,
+    value: e.target.value,
+  });
+
+  if (e.target.name === "email") {
+    const exists = await checkEmailExists(e.target.value);
+
+    if (exists) {
+      dispatch({
+        type: "SET_ERRORS",
+        errors: { email: "Email already exists" },
+      });
+    }
+  }
+}
+```
+
+Now test this:
+
+Type quickly:
+
+```
+a@gmail.com
+ab@gmail.com
+abc@gmail.com
+```
+
+Three API calls fire.
+
+Possible response order:
+
+```
+1 → slow
+2 → fast
+3 → medium
+```
+
+Response order:
+
+```
+2 returns
+3 returns
+1 returns LAST
+```
+
+Now the UI shows the **wrong validation**.
+
+This is called:
+
+> **Async race condition**
+
+### 🧠 Step 5 — Fix Race Condition _(Stale Response Problem)_
+
+> commit hash **4a9a112**
+
+We must ignore **old responses**.
+
+Solution: **request id tracking**
+
+#### Add a Ref
+
+```js
+const requestIdRef = useRef(0);
+```
+
+#### Update Email Validation
+
+```js
+async function handleChange(e) {
+  dispatch({
+    type: "UPDATE_FIELD",
+    section: "personal",
+    field: e.target.name,
+    value: e.target.value,
+  });
+
+  if (e.target.name === "email") {
+    const requestId = ++requestIdRef.current;
+    const exists = await checkEmailExists(e.target.value);
+
+    if (requestId !== requestIdRef.current) {
+      return;
+    }
+
+    if (exists) {
+      dispatch({
+        type: "SET_ERRORS",
+        errors: { email: "Email already exists" },
+      });
+    }
+  }
+}
+```
+
+Now only the **latest request matters**.
+
+Old responses are ignored.
+
+### 🧠 Why This Is Critical
+
+Without this fix:
+
+Typing fast = broken validation.
+
+And this happens in:
+
+- signup forms
+- checkout forms
+- banking apps
+- admin dashboards
+
+### 🧠 Tomorrow Gets Worse (Day 3)
+
+We introduce **autosave + partial drafts**.
+
+Then you will see another brutal bug:
+
+> Last save finishing after newer save → **data corruption**
+
+This happens in **Notion, Google Docs clones, CRMs, etc**.
+
+### ✅ End of Day 2 Checklist
+
+Your form should now:<br>
+✔ Validate required fields<br>
+✔ Validate email format<br>
+✔ Check email uniqueness async<br>
+✔ Prevent stale validation responses<br>

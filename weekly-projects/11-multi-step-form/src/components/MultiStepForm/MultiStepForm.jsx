@@ -5,6 +5,7 @@ import StepEducation from "./StepEducation";
 import StepExperience from "./StepExperience";
 import StepReview from "./StepReview";
 import { validatePersonal } from "./validatePersonal";
+import { checkEmailExists } from "./fakeAPI";
 
 export default function MultiStepForm() {
   const [state, dispatch] = useReducer(formReducer, initialState);
@@ -33,13 +34,31 @@ export default function MultiStepForm() {
     }
   }
 
-  function handleNext() {
+  async function handleNext() {
     if (state.currentStep === 1) {
+      // run the synchronous validations first
       const errors = validatePersonal(formData.personal);
 
       if (Object.keys(errors).length > 0) {
         dispatch({ type: "SET_ERRORS", errors });
         return;
+      }
+
+      // perform the async email existence check
+      try {
+        const exists = await checkEmailExists(formData.personal.email);
+        if (exists) {
+          dispatch({
+            type: "SET_ERRORS",
+            errors: { email: "Email already exists" },
+          });
+          return; // don't advance
+        }
+        // if not exists, clear any previous email error
+        dispatch({ type: "SET_ERRORS", errors: { email: "" } });
+      } catch (err) {
+        // optional: handle API failure; for now we'll just log
+        console.error("email check failed", err);
       }
     }
 

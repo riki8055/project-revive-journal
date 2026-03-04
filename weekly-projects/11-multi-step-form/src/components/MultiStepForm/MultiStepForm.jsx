@@ -8,12 +8,18 @@ import { validatePersonal } from "./validatePersonal";
 
 export default function MultiStepForm() {
   const [state, dispatch] = useReducer(formReducer, initialState);
-  const { currentStep, formData } = state;
+  const { currentStep, formData, errors } = state;
 
   function renderStep() {
     switch (currentStep) {
       case 1:
-        return <StepPersonal data={formData.personal} dispatch={dispatch} />;
+        return (
+          <StepPersonal
+            data={formData.personal}
+            dispatch={dispatch}
+            errors={errors}
+          />
+        );
       case 2:
         return <StepEducation data={formData.education} dispatch={dispatch} />;
       case 3:

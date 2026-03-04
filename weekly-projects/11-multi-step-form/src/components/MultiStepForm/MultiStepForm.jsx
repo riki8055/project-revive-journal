@@ -1,4 +1,4 @@
-import { useReducer, useEffect } from "react";
+import { useReducer, useEffect, useRef } from "react";
 import { formReducer, initialState } from "./formReducer";
 import StepPersonal from "./StepPersonal";
 import StepEducation from "./StepEducation";
@@ -31,13 +31,30 @@ export default function MultiStepForm() {
   const [state, dispatch] = useReducer(formReducer, undefined, loadDraft);
   const { currentStep, formData, errors } = state;
 
-  // autosave whenever relevant parts of the state change
-  useEffect(() => {
+  function saveDraft() {
     const draft = {
       currentStep,
       formData,
     };
     localStorage.setItem("FORM_DRAFT", JSON.stringify(draft));
+  }
+
+  // autosave whenever relevant parts of the state change, debounced
+  const saveTimer = useRef(null);
+  useEffect(() => {
+    // clear previous timer
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+    }
+
+    saveTimer.current = setTimeout(() => {
+      saveDraft();
+      console.log("Autosaved draft");
+    }, 5000); // 5‑second delay
+
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
   }, [currentStep, formData]);
 
   function renderStep() {

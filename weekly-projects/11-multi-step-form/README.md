@@ -1,16 +1,341 @@
-# React + Vite
+# Week 11 - Complex Multi Step Form
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Day 1 – Architecture Before Code.
 
-Currently, two official plugins are available:
+### 🎯 Goal Today
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Build:
 
-## React Compiler
+- 4-step form
+- Shared global state
+- Step navigation
+- No validation yet
+- No async yet
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+But with **correct mental model**.
 
-## Expanding the ESLint configuration
+### 🧠 Step 1 – Think Before Coding
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+You are building:
+
+- Personal Info
+- Education
+- Experience
+- Review & Submit
+
+Now answer this mentally:
+
+If the user goes:
+
+Step 1 → Step 2 → Step 1
+
+Should the data still be there?
+
+Yes.
+
+That means:
+
+👉 Step components cannot own the data.<br>
+👉 Data must live above them.
+
+That’s your first architecture decision.
+
+### 🏗️ State Design _(Single Source of Truth)_
+
+We will use useReducer.
+
+Why?
+
+Because:
+
+- Many fields
+- Multiple transitions
+- Predictable updates
+- Scalable for future validation
+
+### 📦 Shape of Global State
+
+Do NOT overcomplicate.
+
+```js
+const initialState = {
+  currentStep: 1,
+  formData: {
+    personal: {
+      firstName: "",
+      lastName: "",
+      email: "",
+    },
+    education: {
+      degree: "",
+      university: "",
+      year: "",
+    },
+    experience: {
+      company: "",
+      role: "",
+      years: "",
+    },
+  },
+};
+```
+
+Notice:<br>
+✔ One object<br>
+✔ All data centralized<br>
+✔ currentStep inside state
+
+No scattered booleans.
+
+### 🧩 Reducer Design
+
+Think in actions.
+
+What actions exist today?
+
+- UPDATE_FIELD
+- NEXT_STEP
+- PREV_STEP
+- GO_TO_STEP
+
+That’s it.
+
+```js
+function formReducer(state, action) {
+  switch (action.type) {
+    case "UPDATE_FIELD":
+      return {
+        ...state,
+        formData: {
+          ...state.formData,
+          [action.section]: {
+            ...state.formData[action.section],
+            [action.field]: action.value,
+          },
+        },
+      };
+
+    case "NEXT_STEP":
+      return {
+        ...state,
+        currentStep: state.currentStep + 1,
+      };
+
+    case "PREV_STEP":
+      return {
+        ...state,
+        currentStep: state.currentStep - 1,
+      };
+
+    case "GO_TO_STEP":
+      return {
+        ...state,
+        currentStep: action.step,
+      };
+
+    default:
+      return state;
+  }
+}
+```
+
+Notice something important:
+
+We are NOT duplicating state.
+We are not keeping local copies inside steps.
+
+Single source of truth.
+
+### 🧱 App Structure
+
+```
+App
+ ├── MultiStepForm
+      ├── StepPersonal
+      ├── StepEducation
+      ├── StepExperience
+      ├── StepReview
+```
+
+State lives in `MultiStepForm`.
+
+### 🧠 MultiStepForm Component
+
+```jsx
+import { useReducer } from "react";
+
+function MultiStepForm() {
+  const [state, dispatch] = useReducer(formReducer, initialState);
+
+  const { currentStep, formData } = state;
+
+  function renderStep() {
+    switch (currentStep) {
+      case 1:
+        return <StepPersonal data={formData.personal} dispatch={dispatch} />;
+      case 2:
+        return <StepEducation data={formData.education} dispatch={dispatch} />;
+      case 3:
+        return (
+          <StepExperience data={formData.experience} dispatch={dispatch} />
+        );
+      case 4:
+        return <StepReview data={formData} />;
+      default:
+        return null;
+    }
+  }
+
+  return (
+    <div>
+      {renderStep()}
+
+      <div>
+        {currentStep > 1 && (
+          <button onClick={() => dispatch({ type: "PREV_STEP" })}>Back</button>
+        )}
+
+        {currentStep < 4 && (
+          <button onClick={() => dispatch({ type: "NEXT_STEP" })}>Next</button>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+### 🧾 Example Step Component
+
+```jsx
+function StepPersonal({ data, dispatch }) {
+  function handleChange(e) {
+    dispatch({
+      type: "UPDATE_FIELD",
+      section: "personal",
+      field: e.target.name,
+      value: e.target.value,
+    });
+  }
+
+  return (
+    <div>
+      <input
+        name="firstName"
+        value={data.firstName}
+        onChange={handleChange}
+        placeholder="First Name"
+      />
+
+      <input
+        name="lastName"
+        value={data.lastName}
+        onChange={handleChange}
+        placeholder="Last Name"
+      />
+
+      <input
+        name="email"
+        value={data.email}
+        onChange={handleChange}
+        placeholder="Email"
+      />
+    </div>
+  );
+}
+```
+
+Notice:<br>
+✔ Controlled inputs<br>
+✔ No local state<br>
+✔ Everything flows from reducer<br>
+
+### 🧾 Example Step (Review) Component
+
+```jsx
+function StepReview({ data }) {
+  const { personal, education, experience } = data;
+
+  return (
+    <div>
+      <h2>Review Your Application</h2>
+
+      <section>
+        <h3>Personal Information</h3>
+        <p>First Name: {personal.firstName}</p>
+        <p>Last Name: {personal.lastName}</p>
+        <p>Email: {personal.email}</p>
+      </section>
+
+      <section>
+        <h3>Education</h3>
+        <p>Degree: {education.degree}</p>
+        <p>University: {education.university}</p>
+        <p>Year: {education.year}</p>
+      </section>
+
+      <section>
+        <h3>Experience</h3>
+        <p>Company: {experience.company}</p>
+        <p>Role: {experience.role}</p>
+        <p>Years: {experience.years}</p>
+      </section>
+    </div>
+  );
+}
+```
+
+### 🔥 Important Pain Points _(Feel This)_
+
+#### 1️⃣ Where will validation live?
+
+Inside step?<br>
+Inside reducer?<br>
+Separate validation engine?
+
+We don’t solve it today.<br>
+Just notice the architectural pressure.
+
+#### 2️⃣ What if user edits Step 1 after Step 3?
+
+Because everything is centralized:
+
+✔ Review step automatically reflects changes<br>
+✔ No syncing issues
+
+If we had local state in steps?
+
+💣 Data drift<br>
+💣 Sync nightmares
+
+#### 3️⃣ Controlled vs Uncontrolled
+
+- We use controlled inputs because:
+- We need autosave _(Day 3)_
+- We need validation _(Day 2)_
+- We need draft restore
+
+Uncontrolled would break future architecture.
+
+### 🧠 Today’s Mental Takeaway
+
+This is NOT a form.
+
+This is a:
+
+> Small state management system.
+
+And we designed it predictably.
+
+### 🧪 Your Task Now
+
+Implement this.
+
+Then test:
+
+- Fill Step 1
+- Go to Step 2
+- Come back
+- Edit
+- Jump steps
+
+If it feels stable — Day 1 is complete.

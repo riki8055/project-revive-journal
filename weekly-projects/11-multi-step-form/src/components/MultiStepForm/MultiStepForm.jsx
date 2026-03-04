@@ -81,7 +81,7 @@ export default function MultiStepForm() {
   }
 
   async function handleNext() {
-    if (state.currentStep === 1) {
+    if (currentStep === 1) {
       // run the synchronous validations first
       const errors = validatePersonal(formData.personal);
 

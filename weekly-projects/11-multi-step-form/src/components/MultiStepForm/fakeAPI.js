@@ -6,3 +6,12 @@ export function checkEmailExists(email) {
     }, 1000);
   });
 }
+
+export function saveDraftToServer(draft) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log("Draft saved to server:", draft);
+      resolve();
+    }, 2000);
+  });
+}

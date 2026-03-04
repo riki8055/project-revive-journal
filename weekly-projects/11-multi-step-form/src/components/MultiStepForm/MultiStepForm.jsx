@@ -5,7 +5,7 @@ import StepEducation from "./StepEducation";
 import StepExperience from "./StepExperience";
 import StepReview from "./StepReview";
 import { validatePersonal } from "./validatePersonal";
-import { checkEmailExists } from "./fakeAPI";
+import { checkEmailExists, saveDraftToServer } from "./fakeAPI";
 
 export default function MultiStepForm() {
   function loadDraft() {
@@ -31,12 +31,23 @@ export default function MultiStepForm() {
   const [state, dispatch] = useReducer(formReducer, undefined, loadDraft);
   const { currentStep, formData, errors } = state;
 
-  function saveDraft() {
+  const saveIdRef = useRef(0);
+
+  async function saveDraft() {
+    const saveId = ++saveIdRef.current;
+
     const draft = {
       currentStep,
       formData,
     };
-    localStorage.setItem("FORM_DRAFT", JSON.stringify(draft));
+    // localStorage.setItem("FORM_DRAFT", JSON.stringify(draft));
+    await saveDraftToServer(draft);
+
+    if (saveId !== saveIdRef.current) {
+      return;
+    }
+
+    console.log("Latest save confirmed");
   }
 
   // autosave whenever relevant parts of the state change, debounced

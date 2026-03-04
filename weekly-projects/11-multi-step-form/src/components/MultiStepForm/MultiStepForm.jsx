@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useReducer, useEffect } from "react";
 import { formReducer, initialState } from "./formReducer";
 import StepPersonal from "./StepPersonal";
 import StepEducation from "./StepEducation";
@@ -8,8 +8,37 @@ import { validatePersonal } from "./validatePersonal";
 import { checkEmailExists } from "./fakeAPI";
 
 export default function MultiStepForm() {
-  const [state, dispatch] = useReducer(formReducer, initialState);
+  function loadDraft() {
+    try {
+      const savedDraft = localStorage.getItem("FORM_DRAFT");
+
+      if (!savedDraft) return initialState;
+
+      const parsed = JSON.parse(savedDraft);
+
+      return {
+        ...initialState,
+        ...parsed,
+        errors: {}, // never restore errors
+      };
+    } catch (err) {
+      console.error("Failed to load draft", err);
+      return initialState;
+    }
+  }
+  // lazily read saved draft for initial state so that we don't hit
+  // localStorage on every render
+  const [state, dispatch] = useReducer(formReducer, undefined, loadDraft);
   const { currentStep, formData, errors } = state;
+
+  // autosave whenever relevant parts of the state change
+  useEffect(() => {
+    const draft = {
+      currentStep,
+      formData,
+    };
+    localStorage.setItem("FORM_DRAFT", JSON.stringify(draft));
+  }, [currentStep, formData]);
 
   function renderStep() {
     switch (currentStep) {

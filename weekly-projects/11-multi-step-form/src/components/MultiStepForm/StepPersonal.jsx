@@ -1,11 +1,24 @@
+import { checkEmailExists } from "./fakeAPI";
+
 export default function StepPersonal({ data, dispatch, errors }) {
-  function handleChange(e) {
+  async function handleChange(e) {
     dispatch({
       type: "UPDATE_FIELD",
       section: "personal",
       field: e.target.name,
       value: e.target.value,
     });
+
+    if (e.target.name === "email") {
+      const exists = await checkEmailExists(e.target.value);
+
+      if (exists) {
+        dispatch({
+          type: "SET_ERRORS",
+          errors: { email: "Email already exists" },
+        });
+      }
+    }
   }
 
   return (

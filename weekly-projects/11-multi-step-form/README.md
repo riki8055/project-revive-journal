@@ -652,3 +652,179 @@ Your form should now:<br>
 ✔ Validate email format<br>
 ✔ Check email uniqueness async<br>
 ✔ Prevent stale validation responses<br>
+
+## 💾 Day 3 — Autosave + Partial Saves
+
+Your form currently works, but if the browser refreshes → everything is lost.
+
+Today we add:
+
+- Autosave every **5 seconds**
+- Save on **step change**
+- **Restore draft on reload**
+- Handle **overlapping saves**
+
+We will first implement **a naive version**, then break it, then fix it.
+
+### 🧠 Step 1 — Draft Storage Strategy
+
+For now we store draft in:
+
+```
+localStorage
+```
+
+Key:
+
+```js
+FORM_DRAFT;
+```
+
+Draft structure:
+
+```js
+{
+  currentStep: 2,
+  formData: { ... }
+}
+```
+
+### 🧱 Step 2 — Load Draft on App Start
+
+> commit hash **8bb0e96**
+
+Inside `MultiStepForm`.
+
+```js
+function loadDraft() {
+  try {
+    const savedDraft = localStorage.getItem("FORM_DRAFT");
+
+    if (!savedDraft) return initialState;
+
+    const parsed = JSON.parse(savedDraft);
+
+    return {
+      ...initialState,
+      ...parsed,
+      errors: {}, // never restore errors
+    };
+  } catch (err) {
+    console.error("Failed to load draft", err);
+    return initialState;
+  }
+}
+```
+
+Modify `useReducer`:
+
+```js
+const [state, dispatch] = useReducer(formReducer, undefined, loadDraft);
+```
+
+### 🧠 Step 3 — Save Draft Function
+
+Create helper:
+
+```js
+import { useRef } from "react";
+
+const saveIdRef = useRef(0);
+
+async function saveDraft() {
+  const saveId = ++saveIdRef.current;
+
+  const draft = {
+    currentStep,
+    formData,
+  };
+  // localStorage.setItem("FORM_DRAFT", JSON.stringify(draft));
+  await saveDraftToServer(draft);
+
+  if (saveId !== saveIdRef.current) {
+    return;
+  }
+
+  console.log("Latest save confirmed");
+}
+```
+
+Note:
+
+We **do NOT store errors**.
+
+Errors are UI state, not persisted data.
+
+### ⏱ Step 4 — Autosave Every 5 Seconds
+
+> commit hash **a974cb3**
+
+Inside `MultiStepForm`.
+
+```js
+// autosave whenever relevant parts of the state change, debounced
+const saveTimer = useRef(null);
+useEffect(() => {
+  // clear previous timer
+  if (saveTimer.current) {
+    clearTimeout(saveTimer.current);
+  }
+
+  saveTimer.current = setTimeout(() => {
+    saveDraft();
+    console.log("Autosaved draft");
+  }, 5000); // 5‑second delay
+
+  return () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+  };
+}, [currentStep, formData]);
+```
+
+Now every 5 seconds:
+
+```
+Draft saved automatically
+```
+
+### 🧠 Concepts You Just Practiced
+
+#### 1️⃣ In-Flight Request Tracking
+
+Prevent stale operations from updating state.
+
+2️⃣ Last Write Wins
+
+Older operations finishing later corrupt state.
+
+#### 3️⃣ Draft Persistence
+
+Critical for:
+
+- Notion
+- CRMs
+- Checkout flows
+- Long forms
+
+### 🧪 Stress Test
+
+Try this:<br>
+1️⃣ Type rapidly<br>
+2️⃣ Change steps quickly<br>
+3️⃣ Refresh page<br>
+
+Expected:<br>
+✔ Latest data preserved<br>
+✔ Draft restored correctly
+
+### 🧠 Tomorrow — The UX Nightmare
+
+Day 4 introduces **real production UX bugs**:
+
+- Double submit
+- Pending validation + step change
+- Refresh during save
+- Loading states
+- Retry logic
+
+This is where **professional frontend engineers separate themselves**.

@@ -828,3 +828,217 @@ Day 4 introduces **real production UX bugs**:
 - Retry logic
 
 This is where **professional frontend engineers separate themselves**.
+
+## 🔥 Day 4 – UX Bugs That Kill Real Apps
+
+You currently have:<br>
+✔ Multi-step form<br>
+✔ Sync validation<br>
+✔ Async email validation<br>
+✔ Draft persistence _(localStorage)_
+
+But your app still has **hidden UX disasters**.
+
+We will handle **4 real-world problems**.
+
+### 1️⃣ Double Click Submit Problem
+
+Imagine the final step:
+
+User double-clicks **Submit**.
+
+Result:
+
+```
+Request 1 → server
+Request 2 → server
+```
+
+This causes:
+
+- duplicate payments
+- duplicate orders
+- duplicate accounts
+
+#### Fix: Track Submission State
+
+> commit hash **8cc4c1c**
+
+Add to state:
+
+```js
+const currentState = {
+  currentStep: 1,
+  formData: { ... },
+  errors: {},
+  isSubmitting: false
+};
+```
+
+#### Reducer Actions
+
+```js
+case "SUBMIT_START":
+  return { ...state, isSubmitting: true };
+
+case "SUBMIT_SUCCESS":
+  return { ...state, isSubmitting: false };
+
+case "SUBMIT_ERROR":
+  return { ...state, isSubmitting: false };
+```
+
+#### Submit Handler
+
+> commit hash **5149917**
+
+```js
+async function handleSubmit() {
+  if (state.isSubmitting) return;
+
+  dispatch({ type: "SUBMIT_START" });
+
+  try {
+    await fakeSubmitAPI(state.formData);
+
+    dispatch({ type: "SUBMIT_SUCCESS" });
+
+    alert("Application submitted successfully!");
+  } catch (err) {
+    dispatch({ type: "SUBMIT_ERROR" });
+    alert("Submission failed. Try again.");
+  }
+}
+```
+
+#### Disable Button
+
+```js
+<button disabled={state.isSubmitting} onClick={handleSubmit}>
+  {state.isSubmitting ? "Submitting..." : "Submit"}
+</button>
+```
+
+Now **double click does nothing**.
+
+### 2️⃣ Refresh During Save
+
+> commit hash **49977fb**
+
+Right now autosave runs silently.
+
+If user refreshes during save → **data may be lost**.
+
+We warn the user.
+
+#### Add BeforeUnload Protection
+
+```js
+useEffect(() => {
+  const handler = (e) => {
+    e.preventDefault();
+    e.returnValue = "";
+  };
+
+  window.addEventListener("beforeunload", handler);
+
+  return () => {
+    window.removeEventListener("beforeunload", handler);
+  };
+}, []);
+```
+
+Now browser warns:
+
+> “Changes you made may not be saved.”
+
+### 3️⃣ Navigation During Async Validation
+
+> commit hash **15710ff**
+
+Example:
+
+User types email → validation running.
+
+Then clicks Next immediately.
+
+Now validation finishes after step change.
+
+You get:
+
+`Error appears on wrong step`
+
+#### Fix: Track Validation State
+
+Add:
+
+```js
+isValidating: false;
+```
+
+Reducer:
+
+```js
+case "VALIDATION_START":
+  return { ...state, isValidating: true };
+
+case "VALIDATION_END":
+  return { ...state, isValidating: false };
+```
+
+#### Update Email Validation
+
+Before API call:
+
+```js
+dispatch({ type: "VALIDATION_START" });
+```
+
+After:
+
+```js
+dispatch({ type: "VALIDATION_END" });
+```
+
+Disable Next While Validating
+
+```js
+<button onClick={handleNext} disabled={state.isValidating}>
+  {state.isValidating ? "Checking..." : "Next"}
+</button>
+```
+
+Now user **cannot escape validation**.
+
+### 🎯 End of Day 4 Result
+
+Your form now handles:<br>
+✔ Double submit protection<br>
+✔ Async validation blocking<br>
+✔ Refresh protection<br>
+✔ Persistent errors<br>
+✔ Loading feedback<br>
+✔ Retry after failure<br>
+
+Now your form behaves like **a real SaaS product**.
+
+### 🚀 Day 5 _(Very Important)_
+
+Tomorrow we remove messy booleans like:
+
+```
+isSubmitting
+isValidating
+isSaving (BeforeUnload)
+hasError (pending)
+```
+
+And replace them with a **UI State Machine**.
+
+This is how:
+
+- Airbnb
+- Stripe
+- Shopify
+
+manage complex UI flows.

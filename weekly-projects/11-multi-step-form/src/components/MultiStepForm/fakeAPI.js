@@ -15,3 +15,26 @@ export function saveDraftToServer(draft) {
     }, 2000);
   });
 }
+
+export function fakeSubmitAPI(formData) {
+  return new Promise((resolve, reject) => {
+    const delay = 1500 + Math.random() * 1500; // 1.5–3 seconds
+
+    setTimeout(() => {
+      const success = Math.random() > 0.2; // 80% success rate
+
+      if (success) {
+        resolve({
+          status: "success",
+          message: "Application submitted",
+          data: formData,
+        });
+      } else {
+        reject({
+          status: "error",
+          message: "Server error. Please try again.",
+        });
+      }
+    }, delay);
+  });
+}

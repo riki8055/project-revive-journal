@@ -5,7 +5,7 @@ import StepEducation from "./StepEducation";
 import StepExperience from "./StepExperience";
 import StepReview from "./StepReview";
 import { validatePersonal } from "./validatePersonal";
-import { checkEmailExists, saveDraftToServer } from "./fakeAPI";
+import { checkEmailExists, saveDraftToServer, fakeSubmitAPI } from "./fakeAPI";
 
 export default function MultiStepForm() {
   function loadDraft() {
@@ -29,7 +29,7 @@ export default function MultiStepForm() {
   // lazily read saved draft for initial state so that we don't hit
   // localStorage on every render
   const [state, dispatch] = useReducer(formReducer, undefined, loadDraft);
-  const { currentStep, formData, errors } = state;
+  const { currentStep, formData, errors, isSubmitting } = state;
 
   const saveIdRef = useRef(0);
 
@@ -122,6 +122,21 @@ export default function MultiStepForm() {
     dispatch({ type: "NEXT_STEP" });
   }
 
+  async function handleSubmit() {
+    if (isSubmitting) return;
+
+    dispatch({ type: "SUBMIT_START" });
+
+    try {
+      await fakeSubmitAPI(formData);
+      dispatch({ type: "SUBMIT_SUCCESS" });
+      alert("Application submitted successfully!");
+    } catch (e) {
+      dispatch({ type: "SUBMIT_ERROR" });
+      alert("Submission failed. Try again.");
+    }
+  }
+
   return (
     <>
       {renderStep()}
@@ -132,6 +147,12 @@ export default function MultiStepForm() {
         )}
 
         {currentStep < 4 && <button onClick={handleNext}>Next</button>}
+
+        {currentStep === 4 && (
+          <button onClick={handleSubmit} type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Submitting" : "Submit"}
+          </button>
+        )}
       </div>
     </>
   );

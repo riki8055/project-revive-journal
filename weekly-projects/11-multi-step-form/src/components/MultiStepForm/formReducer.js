@@ -18,6 +18,7 @@ export const initialState = {
     },
   },
   errors: {},
+  isSubmitting: false,
 };
 
 export function formReducer(state, action) {
@@ -48,6 +49,15 @@ export function formReducer(state, action) {
         ...state,
         errors: action.errors,
       };
+
+    case "SUBMIT_START":
+      return { ...state, isSubmitting: true };
+
+    case "SUBMIT_SUCCESS":
+      return { ...state, isSubmitting: false };
+
+    case "SUBMIT_ERROR":
+      return { ...state, isSubmitting: false };
 
     default:
       return state;

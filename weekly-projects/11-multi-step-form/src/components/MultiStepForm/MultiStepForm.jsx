@@ -8,6 +8,20 @@ import { validatePersonal } from "./validatePersonal";
 import { checkEmailExists, saveDraftToServer, fakeSubmitAPI } from "./fakeAPI";
 
 export default function MultiStepForm() {
+  //  Before Unload Protection
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handler);
+
+    return () => {
+      window.removeEventListener("beforeunload", handler);
+    };
+  }, []);
+
   function loadDraft() {
     try {
       const savedDraft = localStorage.getItem("FORM_DRAFT");

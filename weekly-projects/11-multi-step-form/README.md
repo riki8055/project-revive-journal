@@ -1042,3 +1042,280 @@ This is how:
 - Shopify
 
 manage complex UI flows.
+
+## Day 5 – Build a Mini State Machine
+
+> Day 5 is where your form architecture becomes **professional-grade**.
+
+Right now your UI probably has flags like:
+
+```js
+isDirty;
+isSubmitting;
+isValidating;
+isSaving;
+```
+
+This leads to **boolean explosion**.
+
+Example impossible state:
+
+```js
+isSubmitting = true;
+isValidating = true;
+isSaving = true;
+```
+
+What does that even mean?
+
+This is why large applications use **State Machines**.
+
+### 🧠 State Machine Mental Model
+
+Instead of many booleans, the UI is always in **one clear state**.
+
+Example states:
+
+```
+idle
+editing
+validating
+saving
+submitting
+success
+error
+```
+
+At any moment:
+
+```
+UI = ONE STATE
+```
+
+### 🎯 Step 1 — Add a `status` Field
+
+> commit hash **9a3acfd**
+
+Replace many booleans with a single status.
+
+Update your base state:
+
+```js
+const currentState = {
+  currentStep: 1,
+  formData: {...},
+  errors: {},
+  status: "idle"
+};
+```
+
+Possible values:
+
+```
+"idle"
+"editing"
+"validating"
+"saving"
+"submitting"
+"success"
+"error"
+```
+
+### 🎯 Step 2 — Define Allowed Transitions
+
+State machines work by **explicit transitions**.
+
+Example flow:
+
+```
+idle → editing
+editing → validating
+validating → editing
+editing → saving
+saving → editing
+editing → submitting
+submitting → success
+submitting → error
+```
+
+This prevents illegal states.
+
+Example illegal transition:
+
+```
+success → validating ❌
+```
+
+### 🎯 Step 3 — Update Reducer
+
+Add a transition action.
+
+```js
+case "SET_STATUS":
+  return {
+    ...state,
+    status: action.status
+  };
+```
+
+### 🎯 Step 4 — Use Status in Validation
+
+> commit hash **26d169e**
+
+Example async email validation.
+
+Before API call:
+
+```js
+dispatch({ type: "SET_STATUS", status: "validating" });
+```
+
+After validation finishes:
+
+```js
+dispatch({ type: "SET_STATUS", status: "editing" });
+```
+
+Now UI knows exactly what's happening.
+
+### 🎯 Step 5 — Saving Draft
+
+> commit hash **8f201c7**
+
+Before autosave:
+
+```js
+dispatch({ type: "SET_STATUS", status: "saving" });
+```
+
+After save finishes:
+
+```js
+dispatch({ type: "SET_STATUS", status: "editing" });
+```
+
+### 🎯 Step 6 — Submitting Form
+
+> commit hash **b4d532f**
+
+Update your submit handler.
+
+```js
+async function handleSubmit() {
+  if (status === "submitting") return;
+
+  dispatch({ type: "SET_STATUS", status: "submitting" });
+
+  try {
+    await fakeSubmitAPI(formData);
+    dispatch({ type: "SET_STATUS", status: "success" });
+    localStorage.removeItem("FORM_DRAFT");
+    alert("Application submitted successfully!");
+  } catch (e) {
+    dispatch({ type: "SET_STATUS", status: "error" });
+    alert("Submission failed. Try again.");
+  }
+}
+```
+
+🎯 Step 7 — UI Based on Status
+
+Buttons should react to state.
+
+Example:
+
+```js
+<button onClick={handleSubmit} disabled={state.status === "submitting"}>
+  {state.status === "submitting" ? "Submitting..." : "Submit"}
+</button>
+```
+
+### 🎯 Example Status Indicators
+
+You can also show UX feedback.
+
+```js
+{
+  state.status === "saving" && <p>Saving draft...</p>;
+}
+{
+  state.status === "validating" && <p>Checking email...</p>;
+}
+{
+  state.status === "error" && <p>Something went wrong.</p>;
+}
+```
+
+### 🧠 Why This Is Powerful
+
+Instead of managing many booleans:
+
+```
+isSaving
+isSubmitting
+isValidating
+```
+
+You now manage **one predictable flow**.
+
+Debugging becomes easier:
+
+```js
+console.log(state.status);
+```
+
+You instantly know **what the UI is doing**.
+
+### 🧠 Real-World Example
+
+Libraries like **XState** implement full state machines.
+
+Companies like:
+
+- Shopify
+- Stripe
+- Airbnb
+- Netflix
+
+use this pattern to control complex UI flows.
+
+Example XState machine:
+
+```
+idle
+ └ editing
+      ├ validating
+      ├ saving
+      └ submitting
+```
+
+### 🧪 Test Your Form Now
+
+Run these scenarios:<br>
+1️⃣ Type email → status = "`validating`"<br>
+2️⃣ Autosave triggers → status = "`saving`"<br>
+3️⃣ Submit → status = "`submitting`"<br>
+4️⃣ Success → status = "`success`"
+
+You should never **see conflicting states**.
+
+### 🚀 What Comes Next _(Final Day)_
+
+Day 6 is about **Performance & Stability**.
+
+We will test your form under stress:
+
+- fast typing
+- step jumping
+- slow network
+- unnecessary re-renders
+
+You'll learn:
+
+```
+memo
+useCallback
+render optimization
+```
+
+The same techniques used in **large production React apps**.

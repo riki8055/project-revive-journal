@@ -54,8 +54,8 @@ export default function MultiStepForm() {
       currentStep,
       formData,
     };
-    // localStorage.setItem("FORM_DRAFT", JSON.stringify(draft));
-    await saveDraftToServer(draft);
+    localStorage.setItem("FORM_DRAFT", JSON.stringify(draft));
+    // await saveDraftToServer(draft);
 
     if (saveId !== saveIdRef.current) {
       return;
@@ -73,7 +73,9 @@ export default function MultiStepForm() {
     }
 
     saveTimer.current = setTimeout(() => {
+      dispatch({ type: "SET_STATUS", status: "saving" });
       saveDraft();
+      dispatch({ type: "SET_STATUS", status: "editing" });
       console.log("Autosaved draft");
     }, 5000); // 5‑second delay
 

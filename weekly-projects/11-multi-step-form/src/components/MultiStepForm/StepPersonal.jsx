@@ -15,9 +15,9 @@ export default function StepPersonal({ data, dispatch, errors }) {
     if (e.target.name === "email") {
       const requestId = ++requestIdRef.current;
 
-      dispatch({ type: "VALIDATION_START" });
+      dispatch({ type: "SET_STATUS", status: "validating" });
       const exists = await checkEmailExists(e.target.value);
-      dispatch({ type: "VALIDATION_END" });
+      dispatch({ type: "SET_STATUS", status: "editing" });
 
       if (requestId !== requestIdRef.current) {
         return;

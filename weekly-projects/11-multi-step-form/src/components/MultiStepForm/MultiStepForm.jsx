@@ -43,7 +43,7 @@ export default function MultiStepForm() {
   // lazily read saved draft for initial state so that we don't hit
   // localStorage on every render
   const [state, dispatch] = useReducer(formReducer, undefined, loadDraft);
-  const { currentStep, formData, errors, isSubmitting, isValidating } = state;
+  const { currentStep, formData, errors, status } = state;
 
   const saveIdRef = useRef(0);
 
@@ -161,8 +161,8 @@ export default function MultiStepForm() {
         )}
 
         {currentStep < 4 && (
-          <button onClick={handleNext} disabled={isValidating}>
-            {isValidating ? "Checking" : "Next"}
+          <button onClick={handleNext} disabled={status === "validating"}>
+            {status === "validating" ? "Checking" : "Next"}
           </button>
         )}
 

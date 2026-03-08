@@ -139,16 +139,17 @@ export default function MultiStepForm() {
   }
 
   async function handleSubmit() {
-    if (isSubmitting) return;
+    if (status === "submitting") return;
 
-    dispatch({ type: "SUBMIT_START" });
+    dispatch({ type: "SET_STATUS", status: "submitting" });
 
     try {
       await fakeSubmitAPI(formData);
-      dispatch({ type: "SUBMIT_SUCCESS" });
+      dispatch({ type: "SET_STATUS", status: "success" });
+      localStorage.removeItem("FORM_DRAFT");
       alert("Application submitted successfully!");
     } catch (e) {
-      dispatch({ type: "SUBMIT_ERROR" });
+      dispatch({ type: "SET_STATUS", status: "error" });
       alert("Submission failed. Try again.");
     }
   }
@@ -169,8 +170,12 @@ export default function MultiStepForm() {
         )}
 
         {currentStep === 4 && (
-          <button onClick={handleSubmit} type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting" : "Submit"}
+          <button
+            onClick={handleSubmit}
+            type="submit"
+            disabled={status === "submitting"}
+          >
+            {status === "submitting" ? "Submitting..." : "Submit"}
           </button>
         )}
       </div>

@@ -1,16 +1,123 @@
-# React + Vite
+# Week 13-14: Advanced Patterns _(Dashboard App)_
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Day 1 - Controlled Inputs _(Single Source of Truth)_
 
-Currently, two official plugins are available:
+### 1. The Core Idea
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+In **vanilla HTML**, the browser manages input values.
 
-## React Compiler
+```html
+<input type="text" />
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The **DOM stores the value internally**.
 
-## Expanding the ESLint configuration
+But in **React controlled inputs**, the **state controls the input value**.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+React becomes the **single source of truth**.
+
+Flow:
+
+```
+User types
+   ↓
+onChange fires
+   ↓
+React state updates
+   ↓
+React re-renders
+   ↓
+Input value updates from state
+```
+
+So **the input always reflects React state**.
+
+## 2. Basic Controlled Input Example
+
+```jsx
+import { useState } from "react";
+
+export default function ControlledForm() {
+  const [name, setName] = useState("");
+
+  return (
+    <div>
+      <h2>Controlled Input</h2>
+
+      <input
+        type="text"
+        placeholder="Enter name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+
+      <p>Name: {name}</p>
+    </div>
+  );
+}
+```
+
+Important parts:
+
+```
+value={name}
+```
+
+React **controls the input value**.
+
+```
+onChange={(e) => setName(e.target.value)}
+```
+
+Updates React state.
+
+## 3. What Happens Behind The Scenes
+
+Every keystroke triggers:
+
+```
+keypress
+   ↓
+onChange
+   ↓
+setState
+   ↓
+React re-render
+   ↓
+input value updated
+```
+
+This is why controlled inputs can become **slow with many inputs** (you will feel this pain on **Day 3**).
+
+## 4. Today’s Exercise
+
+Build this form:
+
+```
+Name
+Email
+Password
+```
+
+Requirements:
+
+- Controlled inputs
+- `useState`
+- live preview
+
+## Expected UI
+
+```
+Form
+
+[ Name input ]
+
+[ Email input ]
+
+[ Password input ]
+
+Live Preview
+Name: ...
+Email: ...
+Password: ...
+```

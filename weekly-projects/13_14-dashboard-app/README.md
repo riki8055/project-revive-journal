@@ -32,7 +32,7 @@ Input value updates from state
 
 So **the input always reflects React state**.
 
-## 2. Basic Controlled Input Example
+### 2. Basic Controlled Input Example
 
 ```jsx
 import { useState } from "react";
@@ -71,7 +71,7 @@ onChange={(e) => setName(e.target.value)}
 
 Updates React state.
 
-## 3. What Happens Behind The Scenes
+### 3. What Happens Behind The Scenes
 
 Every keystroke triggers:
 
@@ -89,7 +89,7 @@ input value updated
 
 This is why controlled inputs can become **slow with many inputs** (you will feel this pain on **Day 3**).
 
-## 4. Today’s Exercise
+### 4. Today’s Exercise
 
 Build this form:
 
@@ -105,7 +105,7 @@ Requirements:
 - `useState`
 - live preview
 
-## Expected UI
+### Expected UI
 
 ```
 Form
@@ -121,3 +121,111 @@ Name: ...
 Email: ...
 Password: ...
 ```
+
+### Starter Code
+
+> commit hash **d3e74af**
+
+```jsx
+// ControlledForm.jsx
+
+import { useState } from "react";
+
+export default function ControlledForm() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  return (
+    <div>
+      <h2>Signup Form</h2>
+
+      <input
+        type="text"
+        placeholder="Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+
+      <h3>Live Preview</h3>
+
+      <p>Name: {name}</p>
+      <p>Email: {email}</p>
+      <p>Password: {password}</p>
+    </div>
+  );
+}
+```
+
+### 5. Important Rule _(Production React)_
+
+A **controlled input must always have**:
+
+```
+value
+onChange
+```
+
+Otherwise React throws warnings.
+
+Example mistake:
+
+```html
+<input value="{name}" />
+```
+
+React will say:
+
+> "Input is read-only because it has a value but no onChange."
+
+### 6. Small Debug Trick _(Very Useful)_
+
+Add render logging.
+
+```js
+console.log("render");
+```
+
+Type in the input.
+
+You will see:
+
+```
+render
+render
+render
+render
+```
+
+This proves **React re-renders on every keystroke**.
+
+This observation becomes important on **Day 3 performance lesson**.
+
+### Your Task _(Important)_
+
+Create file:
+
+```
+ControlledForm.jsx
+```
+
+Must include:
+
+✔ name<br>
+✔ email<br>
+✔ password<br>
+✔ live preview

@@ -229,3 +229,236 @@ Must include:
 ✔ email<br>
 ✔ password<br>
 ✔ live preview
+
+## Day 2 - Handling Multiple Inputs Cleanly
+
+Yesterday you wrote **3 separate states + 3 handlers**.
+That approach **does NOT scale in real apps**.
+
+### 1. The Problem You Had Yesterday
+
+You wrote something like:
+
+```js
+const [name, setName] = useState("");
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
+```
+
+And:
+
+```js
+onChange={(e) => setName(e.target.value)}
+```
+
+👉 Problem:
+
+- Too many states
+- Too many handlers
+- Not scalable _(imagine 20 fields)_
+
+### 2. The Production Pattern
+
+We use **ONE state object**:
+
+```js
+const [form, setForm] = useState({
+  name: "",
+  email: "",
+  password: "",
+});
+```
+
+Now React state looks like:
+
+```js
+{
+  name: "Ritik",
+  email: "abc@gmail.com",
+  password: "123456"
+}
+```
+
+### 3. The Magic: One Dynamic Handler
+
+```js
+function handleChange(e) {
+  const { name, value } = e.target;
+
+  setForm((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+}
+```
+
+#### Why this works
+
+```js
+[name]: value
+```
+
+This is **computed property**:
+
+If input has:
+
+```html
+name="email"
+```
+
+Then:
+
+```js
+form.email = value;
+```
+
+### 4. The Key Rule
+
+Every input MUST have:
+
+```js
+name = "fieldName";
+```
+
+Because handler depends on it.
+
+### 5. Full Clean Example
+
+> commit hash **5b88331**
+
+```js
+// ControlledForm.jsx
+
+import { useState } from "react";
+
+export default function ControlledForm() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    age: "",
+    city: "",
+  });
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
+
+  return (
+    <div>
+      <h2>Smart Form</h2>
+
+      <input
+        name="name"
+        placeholder="Name"
+        value={form.name}
+        onChange={handleChange}
+      />
+
+      <input
+        name="email"
+        placeholder="Email"
+        value={form.email}
+        onChange={handleChange}
+      />
+
+      <input
+        name="password"
+        placeholder="Password"
+        value={form.password}
+        onChange={handleChange}
+      />
+
+      <input
+        name="age"
+        placeholder="Age"
+        value={form.age}
+        onChange={handleChange}
+      />
+
+      <input
+        name="city"
+        placeholder="City"
+        value={form.city}
+        onChange={handleChange}
+      />
+
+      <h3>Preview</h3>
+      <pre>{JSON.stringify(form, null, 2)}</pre>
+    </div>
+  );
+}
+```
+
+### 6. Why This Is Powerful _(Real Insight)_
+
+This pattern enables:
+
+- Dynamic forms _(generated from config)_
+- Form libraries _(Formik, React Hook Form)_
+- Backend-driven forms
+
+👉 This is how **real SaaS dashboards handle forms**
+
+### 7. Mini Challenge _(Do This)_
+
+Upgrade your form:
+
+Add:
+
+- dropdown _(gender)_
+- checkbox _(terms accepted)_
+
+Hint:
+
+```js
+type="checkbox"
+checked={form.terms}
+```
+
+### 8. Common Mistakes _(Very Important)_
+
+❌ Missing `name`
+
+```js
+<input value={form.name} onChange={handleChange} />
+```
+
+👉 Will NOT work
+
+❌ Overwriting state
+
+```js
+setForm({ [name]: value }); // WRONG
+```
+
+👉 You lose other fields
+
+### 9. Debug Like a Pro
+
+Add:
+
+```jsx
+console.log(form);
+```
+
+Type in inputs → watch object update live.
+
+### Your Task
+
+Create:
+
+```bash
+ControlledInput.jsx
+```
+
+Must include:<br>
+✔ 5 inputs<br>
+✔ single state object<br>
+✔ one handler<br>
+✔ live JSON preview

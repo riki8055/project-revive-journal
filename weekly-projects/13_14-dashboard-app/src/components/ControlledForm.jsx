@@ -1,40 +1,64 @@
 import { useState } from "react";
 
 export default function ControlledForm() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    age: "",
+    city: "",
+  });
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
 
   return (
     <div>
-      <h2>Signup Form</h2>
+      <h2>Smart Form</h2>
 
       <input
-        type="text"
+        name="name"
         placeholder="Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        value={form.name}
+        onChange={handleChange}
       />
 
       <input
-        type="email"
+        name="email"
         placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        value={form.email}
+        onChange={handleChange}
       />
 
       <input
-        type="password"
+        name="password"
         placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        value={form.password}
+        onChange={handleChange}
       />
 
-      <h3>Live Preview</h3>
+      <input
+        name="age"
+        placeholder="Age"
+        value={form.age}
+        onChange={handleChange}
+      />
 
-      <p>Name: {name}</p>
-      <p>Email: {email}</p>
-      <p>Password: {password}</p>
+      <input
+        name="city"
+        placeholder="City"
+        value={form.city}
+        onChange={handleChange}
+      />
+
+      <h3>Preview</h3>
+      <pre>{JSON.stringify(form, null, 2)}</pre>
     </div>
   );
 }

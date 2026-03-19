@@ -462,3 +462,232 @@ Must include:<br>
 ✔ single state object<br>
 ✔ one handler<br>
 ✔ live JSON preview
+
+## Day 3 - Controlled Input Performance Pain
+
+### 🎯 Goal
+
+You must **feel** _(not just understand)_ why controlled inputs can be expensive.
+
+### 1. What You Are Going To Prove
+
+> “Every keystroke → full component re-render”
+
+Not theory.<br>
+You will **see it happening live**.
+
+### 2. Create the Experiment
+
+#### Step 1 — Build 50 Inputs
+
+> commit hash **53cad7e**
+
+```jsx
+import { useState } from "react";
+
+export default function HeavyForm() {
+  const [form, setForm] = useState(
+    Array.from({ length: 50 }, (_, i) => `field-${i}`)
+      .reduce((acc, key) => {
+        acc[key] = "";
+        return acc;
+      }, {})
+  );
+
+  console.log("🔥 FULL FORM RE-RENDER");
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+
+    setForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  }
+
+  return (
+    <div>
+      <h2>Heavy Form (50 Inputs)</h2>
+
+      {Object.keys(form).map((key) => (
+        <input
+          key={key}
+          name={key}
+          value={form[key]}
+          onChange={handleChange}
+          placeholder={key}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+### 3. What You Must Do
+
+- Open console
+- Start typing in **ONE input only**
+
+### 4. What You Will Observe
+
+```bash
+🔥 FULL FORM RE-RENDER
+🔥 FULL FORM RE-RENDER
+🔥 FULL FORM RE-RENDER
+```
+
+👉 Even though you typed in ONE input<br>
+👉 ALL 50 inputs re-render
+
+### 5. WHY This Happens _(Core Insight)_
+
+React works like this:
+
+```text
+State changes
+   ↓
+Component function runs again
+   ↓
+Entire JSX recalculated
+   ↓
+All children re-render
+```
+
+So:
+
+```text
+Typing in 1 input
+   ↓
+setState()
+   ↓
+Whole component re-renders
+   ↓
+All 50 inputs re-render
+```
+
+👉 React does NOT update “just one input” by default<br>
+👉 It re-runs the whole component
+
+### 6. This Is NOT a Bug
+
+This is how React is designed:
+
+> React = Re-render everything → then diff → update DOM efficiently
+
+But the **JS work still happens**.
+
+### 7. Real World Impact
+
+Imagine:
+- 200 inputs
+- complex validation
+- API calls
+- heavy components
+
+👉 You get:
+
+- lag
+- typing delay
+- poor UX
+
+### 8. Add Deeper Debugging _(Important)_
+
+> commit hash **808c941**
+
+Modify input:
+
+```jsx
+<input
+  key={key}
+  name={key}
+  value={form[key]}
+  onChange={handleChange}
+  placeholder={key}
+/>
+```
+
+Wrap input in component:
+
+```jsx
+function InputField({ name, value, onChange }) {
+  console.log("Rendering:", name);
+
+  return (
+    <input
+      name={name}
+      value={value}
+      onChange={onChange}
+      placeholder={name}
+    />
+  );
+}
+```
+
+Now use:
+
+```jsx
+<InputField
+  key={key}
+  name={key}
+  value={form[key]}
+  onChange={handleChange}
+/>
+```
+
+### 9. What You Will See Now
+
+Console:
+
+```bash
+Rendering: field-0
+Rendering: field-1
+Rendering: field-2
+...
+Rendering: field-49
+```
+
+👉 ALL inputs re-render<br>
+👉 Even untouched ones
+
+### 10. This Is The Pain
+
+Now you’ve experienced:
+
+> ❗ Controlled inputs don’t scale well by default
+
+### 11. Your Deliverable
+
+> commit hash **e94aa1c**
+
+Create:
+
+```bash
+render-debug.md
+```
+
+Write:
+1. What did you observe?
+2. Why does React re-render everything?
+3. What could go wrong in large apps?
+
+### 12. Think Like an Engineer
+
+Answer this:
+
+> If React re-renders everything…
+how do big apps stay fast?
+
+### 13. What Comes Next _(Important)_
+
+👉 **Uncontrolled Inputs + useRef**
+
+This will show you:
+- How to bypass React re-renders
+- Why libraries like React Hook Form exist
+- How real-world forms are optimized
+
+⚠️ Important Mindset Shift
+
+Today is not about fixing the problem.
+
+It’s about **feeling the limitation deeply**.

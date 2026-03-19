@@ -1,5 +1,13 @@
 import { useState } from "react";
 
+function InputField({ name, value, onChange }) {
+  console.log("Rendering:", name);
+
+  return (
+    <input name={name} value={value} onChange={onChange} placeholder={name} />
+  );
+}
+
 export default function HeavyForm() {
   const [form, setForm] = useState(
     Array.from({ length: 50 }, (_, i) => `field-${i}`).reduce((acc, key) => {
@@ -24,12 +32,11 @@ export default function HeavyForm() {
       <h2>Heavy Form (50 Inputs)</h2>
 
       {Object.keys(form).map((key) => (
-        <input
+        <InputField
           key={key}
           name={key}
           value={form[key]}
           onChange={handleChange}
-          placeholder={key}
         />
       ))}
     </div>

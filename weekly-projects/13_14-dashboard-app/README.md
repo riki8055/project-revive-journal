@@ -891,3 +891,182 @@ Controlled → predictable but expensive<br>
 Uncontrolled → fast but less control
 
 👉 Real apps use **both strategically**
+
+## Day 5 - Controlled vs Uncontrolled _(Real Tradeoffs)_
+
+### 🎯 Goal
+
+Not just what they are — but:
+
+> ❗ WHEN to use Controlled vs Uncontrolled
+
+🧠 First Principle _(Burn This In)_
+
+> There is NO “better” approach.<br>
+> There is only **context**.
+
+### 1. Build 1 — Controlled Login Form
+
+> commit hash **e481495**
+
+#### Why Login = Controlled?
+
+Because:
+
+- You need validation
+- You need instant feedback
+- You may disable button dynamically
+
+#### Code _(Production Style)_
+
+```jsx
+import { useState } from "react";
+
+export default function LoginForm() {
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [error, setError] = useState("");
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!form.email || !form.password) {
+      setError("All fields are required");
+      return;
+    }
+
+    console.log("Login Data:", form);
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <h2>Login (Controlled)</h2>
+
+      <input
+        name="email"
+        placeholder="Email"
+        value={form.email}
+        onChange={handleChange}
+      />
+
+      <input
+        name="password"
+        placeholder="Password"
+        value={form.password}
+        onChange={handleChange}
+      />
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      <button type="submit">Login</button>
+    </form>
+  );
+}
+```
+
+### 2. Build 2 — Uncontrolled Feedback Form
+
+> commit hash **321d6e5**
+
+#### Why Feedback = Uncontrolled?
+
+Because:
+
+- No live validation needed
+- No UI dependency on input state
+- Just collect and submit
+
+#### Code
+
+```jsx
+import { useRef } from "react";
+
+export default function FeedbackForm() {
+  const nameRef = useRef();
+  const messageRef = useRef();
+
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    const data = {
+      name: nameRef.current.value,
+      message: messageRef.current.value,
+    };
+
+    console.log("Feedback:", data);
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <h2>Feedback (Uncontrolled)</h2>
+
+      <input ref={nameRef} placeholder="Your Name" />
+
+      <textarea ref={messageRef} placeholder="Your Feedback" />
+
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+
+### 3. The Real Comparison _(Write This in Your Notes)_
+
+> commit hash **183c7ef**
+
+Refer to **forms-comparison.md**
+
+### 4. The Most Important Insight _(Don’t Miss This)_
+
+👉 Real production apps:
+
+```
+NOT:
+"Controlled vs Uncontrolled"
+
+BUT:
+"Controlled WHERE needed"
++
+"Uncontrolled WHERE possible"
+```
+
+### 5. Answer This (Critical Thinking)
+
+> If uncontrolled inputs are faster…<br>
+> why don’t we use them everywhere?
+
+### 6. Expected Direction _(Don’t copy, think)_
+
+Because:
+
+- No real-time validation
+- No state sync
+- Hard to control UI behavior
+
+### 6. What You Just Learned _(Big Upgrade)_
+
+You now understand:
+
+- Performance vs Control tradeoff
+- When React state is necessary
+- When React state is overkill
+
+👉 This is **senior-level thinking**
+
+### Your Task
+
+✔ Build both forms<br>
+✔ Create forms-comparison.md<br>
+✔ Answer the question

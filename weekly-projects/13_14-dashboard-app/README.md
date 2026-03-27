@@ -487,11 +487,10 @@ import { useState } from "react";
 
 export default function HeavyForm() {
   const [form, setForm] = useState(
-    Array.from({ length: 50 }, (_, i) => `field-${i}`)
-      .reduce((acc, key) => {
-        acc[key] = "";
-        return acc;
-      }, {})
+    Array.from({ length: 50 }, (_, i) => `field-${i}`).reduce((acc, key) => {
+      acc[key] = "";
+      return acc;
+    }, {}),
   );
 
   console.log("🔥 FULL FORM RE-RENDER");
@@ -499,9 +498,9 @@ export default function HeavyForm() {
   function handleChange(e) {
     const { name, value } = e.target;
 
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   }
 
@@ -579,6 +578,7 @@ But the **JS work still happens**.
 ### 7. Real World Impact
 
 Imagine:
+
 - 200 inputs
 - complex validation
 - API calls
@@ -613,12 +613,7 @@ function InputField({ name, value, onChange }) {
   console.log("Rendering:", name);
 
   return (
-    <input
-      name={name}
-      value={value}
-      onChange={onChange}
-      placeholder={name}
-    />
+    <input name={name} value={value} onChange={onChange} placeholder={name} />
   );
 }
 ```
@@ -626,12 +621,7 @@ function InputField({ name, value, onChange }) {
 Now use:
 
 ```jsx
-<InputField
-  key={key}
-  name={key}
-  value={form[key]}
-  onChange={handleChange}
-/>
+<InputField key={key} name={key} value={form[key]} onChange={handleChange} />
 ```
 
 ### 9. What You Will See Now
@@ -666,6 +656,7 @@ render-debug.md
 ```
 
 Write:
+
 1. What did you observe?
 2. Why does React re-render everything?
 3. What could go wrong in large apps?
@@ -675,13 +666,14 @@ Write:
 Answer this:
 
 > If React re-renders everything…
-how do big apps stay fast?
+> how do big apps stay fast?
 
 ### 13. What Comes Next _(Important)_
 
 👉 **Uncontrolled Inputs + useRef**
 
 This will show you:
+
 - How to bypass React re-renders
 - Why libraries like React Hook Form exist
 - How real-world forms are optimized
@@ -691,3 +683,211 @@ This will show you:
 Today is not about fixing the problem.
 
 It’s about **feeling the limitation deeply**.
+
+## Day 4 - Uncontrolled Inputs _(Escape Hatch)_
+
+### 🎯 Goal
+
+Understand:
+
+> When React **should NOT control inputs**
+
+### 1. The Core Idea
+
+In uncontrolled inputs:
+
+👉 **DOM holds the value**<br>
+👉 React just “reads it when needed”
+
+Flow:
+
+```
+User types
+   ↓
+DOM stores value (not React)
+   ↓
+No re-render happens
+   ↓
+React reads value using ref (only when needed)
+```
+
+### 2. Your First Uncontrolled Input
+
+> commit hash **4bba669**
+
+```jsx
+import { useRef } from "react";
+
+export default function UncontrolledForm() {
+  const nameRef = useRef();
+
+  function handleSubmit() {
+    console.log(nameRef.current.value);
+  }
+
+  return (
+    <div>
+      <input ref={nameRef} placeholder="Enter name" />
+      <button onClick={handleSubmit}>Submit</button>
+    </div>
+  );
+}
+```
+
+### 3. Key Difference _(VERY IMPORTANT)_
+
+| Controlled         | Uncontrolled     |
+| ------------------ | ---------------- |
+| React Stores value | DOM stores value |
+| Causes re-render   | No re-render     |
+| value + onChange   | ref              |
+
+### 4. Add More Fields
+
+> commit hash **4b7482f**
+
+Now scale it:
+
+```jsx
+import { useRef } from "react";
+
+export default function UncontrolledForm() {
+  const nameRef = useRef();
+  const emailRef = useRef();
+  const passwordRef = useRef();
+
+  function handleSubmit() {
+    const formData = {
+      name: nameRef.current.value,
+      email: emailRef.current.value,
+      password: passwordRef.current.value,
+    };
+
+    console.log(formData);
+  }
+
+  return (
+    <div>
+      <h2>Uncontrolled Form</h2>
+
+      <input ref={nameRef} placeholder="Name" />
+      <input ref={emailRef} placeholder="Email" />
+      <input ref={passwordRef} placeholder="Password" />
+
+      <button onClick={handleSubmit}>Submit</button>
+    </div>
+  );
+}
+```
+
+### 5. Important Concept: `defaultValue`
+
+If you want initial value:
+
+```html
+<input defaultValue="Ritik" ref="{nameRef}" />
+```
+
+⚠️ DO NOT use `value` here<br>
+→ that makes it controlled again
+
+### 6. Proof That No Re-render Happens
+
+Add:
+
+```js
+console.log("render");
+```
+
+Now type in input.
+
+👉 You will see:
+
+```bash
+render
+```
+
+ONLY ONCE _(initial render)_
+
+🔥 This is the breakthrough moment.
+
+### 7. When Uncontrolled Inputs Are Used _(Real World)_
+
+This is where it gets serious.
+
+Used in:
+
+- Large forms _(50+ inputs)_
+- Performance-critical apps
+- Libraries like:
+  - React Hook Form
+  - Final Form
+
+### 8. Tradeoffs _(Be Honest)_
+
+#### Advantages
+
+✔ No re-renders<br>
+✔ Better performance<br>
+✔ Scales well
+
+#### Disadvantages
+
+❌ Less control<br>
+❌ Harder validation<br>
+❌ Not reactive _(no live preview)_
+
+### 9. Mini Challenge
+
+Upgrade your form:
+
+Add:
+
+- checkbox _(terms)_
+- dropdown _(city)_
+
+Hint:
+
+```html
+<select ref="{cityRef}">
+  <option value="Delhi">Delhi</option>
+</select>
+```
+
+### 10. Controlled vs Uncontrolled _(Real Insight)_
+
+👉 Controlled = **React-driven UI**
+
+👉 Uncontrolled = **DOM-driven UI**
+
+### 11. Your Task
+
+Create:
+
+```bash
+UncontrolledForm.jsx
+```
+
+Must include:
+
+✔ name<br>
+✔ email<br>
+✔ password<br>
+✔ submit button<br>
+✔ console output
+
+### 12. Think Like an Engineer
+
+Answer this:
+
+> If uncontrolled inputs are faster…<br>
+> why don’t we use them everywhere?
+
+### Final Thought _(Important)_
+
+You now know:
+
+Controlled → predictable but expensive<br>
+Uncontrolled → fast but less control
+
+👉 Real apps use **both strategically**

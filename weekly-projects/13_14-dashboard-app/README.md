@@ -1070,3 +1070,233 @@ You now understand:
 ✔ Build both forms<br>
 ✔ Create forms-comparison.md<br>
 ✔ Answer the question
+
+## Day 6 - Error Boundaries _(Crash Containment System)_
+
+### 🎯 Core Idea
+
+> ❗ In production, things WILL break.<br>
+> Your job is not to prevent all errors…<br>
+> Your job is to **contain them**.
+
+### 1. The Real Problem
+
+Without Error Boundaries:
+
+```
+Component crashes ❌
+   ↓
+Entire React tree crashes ❌
+   ↓
+Blank screen (white screen of death)
+```
+
+👉 This is unacceptable in real apps.
+
+### 2. What is an Error Boundary?
+
+> A component that **catches JavaScript errors in its child tree** and shows a fallback UI instead of crashing the whole app.
+
+### 3. Important Limitation _(Very Important)_
+
+Error Boundaries ONLY catch:
+
+✔ Rendering errors<br>
+✔ Lifecycle errors<br>
+✔ Constructor errors
+
+They DO NOT catch:
+
+❌ Event handler errors<br>
+❌ Async errors _(setTimeout, API calls)_<br>
+❌ Server-side errors
+
+### 4. Build Your First Error Boundary
+
+> commit hash **e225a07**
+
+#### Production-Grade Version
+
+```jsx
+// ErrorBoundary.jsx
+
+import React from "react";
+
+export default class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      hasError: false,
+      error: null,
+    };
+  }
+
+  // Step 1: Trigger fallback UI
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  // Step 2: Log error (for debugging / monitoring)
+  componentDidCatch(error, errorInfo) {
+    console.error("Error caught:", error);
+    console.error("Error info:", errorInfo);
+
+    // In real apps:
+    // send to logging service (Sentry, LogRocket, etc.)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div>
+          <h2>🚨 Something went wrong</h2>
+          <p>{this.state.error?.message}</p>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+### 5. Why Class Component? _(Deep Insight)_
+
+You might ask:
+
+> “Why not hooks?”
+
+👉 Because:
+
+- Error boundaries rely on lifecycle methods
+- Hooks DO NOT support error catching
+
+> ❗ Error Boundaries = Class-only feature _(still true in React today)_
+
+### 6. Create a Crash Component
+
+> commit hash **eccbd35**
+
+```jsx
+// Crash.jsx
+
+export function Crash() {
+  throw new Error("💥 Intentional crash");
+}
+```
+
+### 7. Wrap It
+
+```jsx
+import ErrorBoundary from "./ErrorBoundary";
+import { Crash } from "./Crash";
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <Crash />
+    </ErrorBoundary>
+  );
+}
+```
+
+### 8. What Happens Now
+
+Instead of:
+
+```
+💀 App crashes completely
+```
+
+You get:
+
+```
+🚨 Something went wrong
+💥 Intentional crash
+```
+
+👉 App survives<br>
+👉 Only that part fails
+
+### 9. Real World Usage Pattern
+
+You NEVER wrap whole app blindly.
+
+Instead:
+
+```
+App
+ ├─ Header
+ ├─ Sidebar
+ ├─ ErrorBoundary
+ │    └─ Dashboard (can crash safely)
+ └─ Footer
+```
+
+👉 If Dashboard crashes:
+
+- Header still works
+- Sidebar still works
+
+### 10. Advanced Pattern _(Important)_
+
+Wrap **risky components only**
+
+Examples:
+
+- Charts _(data-heavy)_
+- Third-party components
+- API-driven UI
+- Dynamic rendering sections
+
+### 11. Why This Matters in Your Project
+
+Your upcoming **Dashboard App** will have:
+
+- charts
+- tables
+- async data
+
+👉 These are **high-risk components**
+
+Error Boundary will:
+
+✔ Prevent full app crash<br>
+✔ Show fallback UI<br>
+✔ Improve UX
+
+### 12. Your Task
+
+Create:
+
+```bash
+ErrorBoundary.jsx
+```
+
+And:
+
+```bash
+Crash.jsx
+```
+
+Then:
+
+✔ Wrap Crash component<br>
+✔ Observe behavior<br>
+✔ Modify fallback UI
+
+### 13. Think Like a Production Engineer
+
+Answer this:
+
+> If error boundaries don’t catch async errors…<br>
+> how do real apps handle API failures?
+
+### ⚠️ Final Insight
+
+React apps don’t fail because of errors…
+
+They fail because:
+
+> ❗ “Errors were not handled properly”

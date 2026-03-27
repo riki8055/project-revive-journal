@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 export default function LoginForm() {
+  console.log("LoginForm re-rendered");
   const [form, setForm] = useState({
     email: "",
     password: "",

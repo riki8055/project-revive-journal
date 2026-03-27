@@ -4,12 +4,15 @@ import HeavyForm from "./components/HeavyForm";
 import UncontrolledForm from "./components/UncontrolledForm";
 import LoginForm from "./components/LoginForm";
 import FeedbackForm from "./components/FeedbackForm";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { Crash } from "./components/Crash";
 
 function App() {
   return (
     <div style={{ marginTop: "100px" }}>
-      <LoginForm />
-      <FeedbackForm />
+      <ErrorBoundary>
+        <Crash />
+      </ErrorBoundary>
     </div>
   );
 }

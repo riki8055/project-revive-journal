@@ -6,13 +6,12 @@ import LoginForm from "./components/LoginForm";
 import FeedbackForm from "./components/FeedbackForm";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Crash } from "./components/Crash";
+import LazyExample from "./components/LazyExample";
 
 function App() {
   return (
     <div style={{ marginTop: "100px" }}>
-      <ErrorBoundary>
-        <Crash />
-      </ErrorBoundary>
+      <LazyExample />
     </div>
   );
 }

@@ -203,3 +203,247 @@ But you've done something more important:
 👉 **You created a scalable foundation**
 
 Most beginners skip this → regret later.
+
+## Day 2 — DataTable Component _(Production Mindset)_
+
+### 🧠 First Principle
+
+Don’t build:
+
+> “a table for this dashboard”
+
+Build:
+
+> **a reusable table engine**
+
+### Step 1: Component Contract _(IMPORTANT)_
+
+Your table should NOT hardcode anything.
+
+It should accept:
+
+```js
+columns = [
+  { key: "user", label: "User" },
+  { key: "revenue", label: "Revenue" },
+  { key: "orders", label: "Orders" },
+  { key: "status", label: "Status" },
+];
+
+data = [{ user: "Ritik", revenue: 5000, orders: 12, status: "Active" }];
+```
+
+👉 This is what makes it reusable.
+
+### 🏗️ Step 2: File Setup
+
+```
+components/
+  Table/
+    DataTable.jsx
+    index.js
+```
+
+### 🧩 Step 3: Core Implementation
+
+> commit hash **f195a4c**
+
+#### ✅ DataTable.jsx
+
+```jsx
+import { useState } from "react";
+
+export default function DataTable({ columns, data }) {
+  const [sortConfig, setSortConfig] = useState(null);
+
+  function handleSort(key) {
+    setSortConfig((prev) => {
+      if (prev && prev.key === key) {
+        return {
+          key,
+          direction: prev.direction === "asc" ? "desc" : "asc",
+        };
+      }
+      return { key, direction: "asc" };
+    });
+  }
+
+  const sortedData = [...data].sort((a, b) => {
+    if (!sortConfig) return 0;
+
+    const { key, direction } = sortConfig;
+
+    if (a[key] < b[key]) return direction === "asc" ? -1 : 1;
+    if (a[key] > b[key]) return direction === "asc" ? 1 : -1;
+
+    return 0;
+  });
+
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <thead>
+        <tr>
+          {columns.map((col) => (
+            <th
+              key={col.key}
+              onClick={() => handleSort(col.key)}
+              style={{
+                cursor: "pointer",
+                borderBottom: "1px solid #ccc",
+                padding: "10px",
+                textAlign: "left",
+              }}
+            >
+              {col.label}
+              {sortConfig?.key === col.key
+                ? sortConfig.direction === "asc"
+                  ? " 🔼"
+                  : " 🔽"
+                : ""}
+            </th>
+          ))}
+        </tr>
+      </thead>
+
+      <tbody>
+        {sortedData.map((row, index) => (
+          <tr key={index}>
+            {columns.map((col) => (
+              <td
+                key={col.key}
+                style={{
+                  padding: "10px",
+                  borderBottom: "1px solid #eee",
+                }}
+              >
+                {row[col.key]}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+```
+
+### 🔌 Step 4: Export Cleaner
+
+#### index.js
+
+```js
+export { default } from "./DataTable";
+```
+
+### 🧪 Step 5: Use in Dashboard
+
+Inside `Dashboard.jsx`:
+
+```jsx
+import Sidebar from "@/components/Sidebar/Sidebar";
+import Header from "@/components/Header/Header";
+import DataTable from "@/components/Table";
+
+const columns = [
+  { key: "user", label: "User" },
+  { key: "revenue", label: "Revenue" },
+  { key: "orders", label: "Orders" },
+  { key: "status", label: "Status" },
+];
+
+const data = [
+  { user: "Ritik", revenue: 5000, orders: 12, status: "Active" },
+  { user: "Aman", revenue: 3000, orders: 8, status: "Inactive" },
+  { user: "Neha", revenue: 7000, orders: 15, status: "Active" },
+];
+
+export default function Dashboard() {
+  return (
+    <div style={{ display: "flex" }}>
+      <Sidebar />
+      <div style={{ flex: 1 }}>
+        <Header />
+        <h2>Users</h2>
+        <DataTable columns={columns} data={data} />
+      </div>
+    </div>
+  );
+}
+```
+
+### 🧠 Important Engineering Insights
+
+#### 1. Why columns config?
+
+Because:
+
+- You decouple UI from data
+- Same table can be reused anywhere
+
+#### 2. Why `sortConfig` object?
+
+Instead of multiple states:
+
+❌ bad:
+
+```js
+const [sortKey, setSortKey];
+const [direction, setDirection];
+```
+
+✅ good:
+
+```js
+{
+  (key, direction);
+}
+```
+
+👉 Easier to scale _(multi-sort later)_
+
+#### 3. Why `[...]` before sorting?
+
+```js
+[...data];
+```
+
+Because:<br>
+👉 You NEVER mutate props
+
+### 4. Why index as key is okay here?
+
+Temporary.
+
+But in real apps:<br>
+👉 Use unique IDs
+
+### 🔥 Level-Up _(Optional if you want to push)_
+
+Add:
+
+- Conditional cell rendering
+- Status color _(green/red)_
+- Empty state
+- Loading state
+
+### 🎯 Deliverable Checklist
+
+Before Day 3:
+
+- Table renders dynamically
+- Sorting works _(asc/desc toggle)_
+- No hardcoded columns
+- Reusable via props
+- Clean structure
+
+### 👇 Your Turn
+
+Now I want you to think like a dev, not a copier:
+
+👉 Answer this:
+
+**How would you support custom cell rendering?**
+
+Example:
+
+- Status → colored badge instead of text

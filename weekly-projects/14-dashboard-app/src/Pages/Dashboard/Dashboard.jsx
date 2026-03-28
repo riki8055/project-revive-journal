@@ -1,6 +1,7 @@
 import Sidebar from "@/components/Sidebar/Sidebar";
 import Header from "@/components/Header/Header";
 import DataTable from "@/components/Table";
+import SalesChart from "@/components/Chart";
 
 const columns = [
   { key: "user", label: "User" },
@@ -15,6 +16,12 @@ const data = [
   { user: "Neha", revenue: 7000, orders: 15, status: "Active" },
 ];
 
+// Transform
+const chartData = data.map((item) => ({
+  name: item.user,
+  revenue: item.revenue,
+}));
+
 export default function Dashboard() {
   return (
     <div style={{ display: "flex" }}>
@@ -23,6 +30,8 @@ export default function Dashboard() {
         <Header />
         <h2>Users</h2>
         <DataTable columns={columns} data={data} />
+        <SalesChart data={chartData} type="line" xKey="name" yKey="revenue" />
+        <SalesChart data={chartData} type="bar" xKey="name" yKey="revenue" />
       </div>
     </div>
   );

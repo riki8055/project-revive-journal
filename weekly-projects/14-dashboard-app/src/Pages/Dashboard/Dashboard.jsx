@@ -24,14 +24,52 @@ const chartData = data.map((item) => ({
 
 export default function Dashboard() {
   return (
-    <div style={{ display: "flex" }}>
+    <div style={{ display: "flex", height: "100vh" }}>
+      {/* Sidebar */}
       <Sidebar />
-      <div style={{ flex: 1 }}>
+
+      {/* Main Content */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        {/* Header */}
         <Header />
-        <h2>Users</h2>
-        <DataTable columns={columns} data={data} />
-        <SalesChart data={chartData} type="line" xKey="name" yKey="revenue" />
-        <SalesChart data={chartData} type="bar" xKey="name" yKey="revenue" />
+
+        {/* Content Area */}
+        <div style={{ padding: "20px", overflowY: "auto" }}>
+          <h2>Dashboard Overview</h2>
+
+          {/* Charts Section */}
+          <div
+            style={{
+              display: "flex",
+              gap: "20px",
+              marginBottom: "20px",
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <SalesChart
+                data={chartData}
+                type="line"
+                xKey="name"
+                yKey="revenue"
+              />
+            </div>
+
+            <div style={{ flex: 1 }}>
+              <SalesChart
+                data={chartData}
+                type="bar"
+                xKey="name"
+                yKey="revenue"
+              />
+            </div>
+          </div>
+
+          {/* Table Section */}
+          <div>
+            <h2>Users</h2>
+            <DataTable columns={columns} data={data} />
+          </div>
+        </div>
       </div>
     </div>
   );
